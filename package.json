@@ -1,0 +1,15 @@
+{
+  "name": "pmanagermigrate",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "csv-simple-parser": "^2.0.2"
+  }
+}
