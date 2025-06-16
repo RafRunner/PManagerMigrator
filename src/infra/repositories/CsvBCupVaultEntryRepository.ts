@@ -5,7 +5,7 @@ import type { VaultEntryRepository } from "../../core/interfaces/repositories/Va
 import type { VaultEntryCreateProps } from "../../core/types/VaultEntryTypes";
 import { VaultEntryId } from "../../core/valueObjects/VaultEntryId";
 import { VaultFolderId } from "../../core/valueObjects/VoultFolderId";
-import type { CsvFile } from "../util/CsvFile.ts";
+import type { CsvFile } from "../files/CsvFile.ts";
 
 export class CsvBCupVaultEntryRepository implements VaultEntryRepository {
   constructor(private readonly file: CsvFile) {}
@@ -37,13 +37,14 @@ export class CsvBCupVaultEntryRepository implements VaultEntryRepository {
   }
 
   private mapRowToEntry(row: Record<string, string>): VaultEntry {
-    const { "!group_id": groupId, id: rowId, title, ...rest } = row;
+    let { "!group_id": groupId, id: rowId, title, ...rest } = row;
 
     if (!rowId) {
       throw new Error("Row does not have an id field.");
     }
     if (!title) {
-      throw new Error("Row does not have a title field.");
+      console.warn("Row does not have a title field.");
+      title = "Untitled Entry " + rowId;
     }
 
     if (rest.note) {
@@ -59,10 +60,6 @@ export class CsvBCupVaultEntryRepository implements VaultEntryRepository {
     }
 
     const { username, password, url, ...extraFields } = rest;
-    if (!password) {
-      throw new Error("Row does not have username or password fields.");
-    }
-
     const actualUrl = url || extraFields.url || extraFields.URL;
 
     return new PasswordEntry(
@@ -71,7 +68,7 @@ export class CsvBCupVaultEntryRepository implements VaultEntryRepository {
       groupId ? new VaultFolderId(groupId) : null,
       this.removeUnnecessaryFields(extraFields),
       username || "",
-      password,
+      password || "",
       actualUrl
     );
   }
