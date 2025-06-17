@@ -25,4 +25,7 @@ export type NoteEntryCreateProps = AbstractVaultEntryCreateProps & {
   content?: string;
 };
 
-export type VaultEntryCreateProps = PasswordEntryCreateProps | NoteEntryCreateProps;
+export type VaultEntryCreateProps =
+  | PasswordEntryCreateProps
+  | NoteEntryCreateProps
+  | CreditCardEntryCreateProps;
