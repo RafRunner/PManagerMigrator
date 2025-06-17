@@ -1,3 +1,4 @@
+import { CreditCardEntry } from "../../core/entities/CreditCardEntry.ts";
 import { NoteEntry } from "../../core/entities/NoteEntry";
 import { PasswordEntry } from "../../core/entities/PasswordEntry";
 import type { VaultEntry } from "../../core/entities/VaultEntry";
@@ -59,6 +60,31 @@ export class CsvBCupVaultEntryRepository implements VaultEntryRepository {
       );
     }
 
+    if (rest.cvv) {
+      const {
+        cvv,
+        type: cardCompany,
+        password: cardNumber,
+        username: cardHolderName,
+        expiry: expirationDate,
+        valid_from: validFrom,
+        ...extraFields
+      } = rest;
+
+      return new CreditCardEntry(
+        new VaultEntryId(rowId),
+        title.trim(),
+        groupId ? new VaultFolderId(groupId) : null,
+        this.removeUnnecessaryFields(extraFields),
+        cardCompany || "",
+        cardNumber || "",
+        cardHolderName || "",
+        this.parseMMYYYYDate(expirationDate),
+        this.parseMMYYYYDate(validFrom),
+        cvv
+      );
+    }
+
     const { username, password, url, ...extraFields } = rest;
     const actualUrl = url || extraFields.url || extraFields.URL;
 
@@ -71,6 +97,21 @@ export class CsvBCupVaultEntryRepository implements VaultEntryRepository {
       password || "",
       actualUrl
     );
+  }
+
+  private parseMMYYYYDate(dateString: string | undefined): Date | null {
+    if (!dateString || dateString.length !== 6) {
+      return null;
+    }
+
+    const month = parseInt(dateString.substring(0, 2), 10);
+    const year = parseInt(dateString.substring(2, 6), 10);
+
+    if (month < 1 || month > 12 || year < 1000) {
+      return null;
+    }
+
+    return new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0));
   }
 
   private removeUnnecessaryFields(row: Record<string, string>): Record<string, string> {

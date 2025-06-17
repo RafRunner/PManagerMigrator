@@ -8,8 +8,8 @@ export class PasswordEntry extends VaultEntry {
   constructor(
     id: VaultEntryId,
     name: string,
-    folderId: VaultFolderId | null = null,
-    extraFields: Record<string, string> = {},
+    folderId: VaultFolderId | null,
+    extraFields: Record<string, string>,
     readonly username: string,
     readonly password: string,
     url?: string

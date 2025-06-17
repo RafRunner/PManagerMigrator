@@ -1,4 +1,3 @@
-import { VaultFolderId } from "./src/core/valueObjects/VoultFolderId";
 import { CsvBCupVaultEntryRepository } from "./src/infra/repositories/CsvBCupVaultEntryRepository";
 import { CsvFile } from "./src/infra/files/CsvFile.ts";
 import { CsvBCupVaultFolderRepository } from "./src/infra/repositories/CsvBCupVaultFolderRepository.ts";

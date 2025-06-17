@@ -64,7 +64,8 @@ export class CsvBCupVaultFolderRepository implements VaultFolderRepository {
     return new VaultFolder(
       new VaultFolderId(groupId),
       name.trim(),
-      parentId ? new VaultFolderId(parentId) : null
+      parentId ? new VaultFolderId(parentId) : null,
+      []
     );
   }
 }

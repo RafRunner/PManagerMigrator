@@ -6,8 +6,8 @@ export class VaultFolder extends Entity<VaultFolderId> {
   constructor(
     id: VaultFolderId,
     readonly name: string,
-    readonly parentId: VaultFolderId | null = null,
-    readonly entries: VaultEntry[] = []
+    readonly parentId: VaultFolderId | null,
+    readonly entries: VaultEntry[]
   ) {
     super(id);
   }

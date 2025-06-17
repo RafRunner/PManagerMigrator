@@ -12,6 +12,15 @@ export type PasswordEntryCreateProps = AbstractVaultEntryCreateProps & {
   url?: string;
 };
 
+export type CreditCardEntryCreateProps = AbstractVaultEntryCreateProps & {
+  cardCompany: string;
+  cardNumber: string;
+  cardHolderName: string;
+  expirationDate: Date | null;
+  validFrom: Date | null;
+  cvv: string;
+};
+
 export type NoteEntryCreateProps = AbstractVaultEntryCreateProps & {
   content?: string;
 };

@@ -6,8 +6,8 @@ export abstract class VaultEntry extends Entity<VaultEntryId> {
   constructor(
     id: VaultEntryId,
     readonly name: string,
-    readonly folderId: VaultFolderId | null = null,
-    readonly extraFields: Record<string, string> = {}
+    readonly folderId: VaultFolderId | null,
+    readonly extraFields: Record<string, string>
   ) {
     super(id);
   }
@@ -17,7 +17,7 @@ export abstract class VaultEntry extends Entity<VaultEntryId> {
       id: this.id,
       name: this.name,
       folderId: this.folderId,
-      extraFields: this.extraFields
+      extraFields: this.extraFields,
     };
   }
 }

@@ -6,9 +6,9 @@ export class NoteEntry extends VaultEntry {
   constructor(
     id: VaultEntryId,
     name: string,
-    folderId: VaultFolderId | null = null,
-    extraFields: Record<string, string> = {},
-    readonly content: string = ""
+    folderId: VaultFolderId | null,
+    extraFields: Record<string, string>,
+    readonly content: string
   ) {
     super(id, name, folderId, extraFields);
   }
