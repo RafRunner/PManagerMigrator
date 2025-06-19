@@ -11,15 +11,13 @@ import type {
 } from "../../core/types/VaultEntryTypes";
 import { VaultEntryId } from "../../core/valueObjects/VaultEntryId";
 import { VaultFolderId } from "../../core/valueObjects/VoultFolderId";
-import type { BitWardenApiClient, BitWardenItem, BitWardenField } from "../api/BitWardenApiClient";
-
-// BitWarden item types
-const BITWARDEN_ITEM_TYPE = {
-  LOGIN: 1,
-  SECURE_NOTE: 2,
-  CARD: 3,
-  IDENTITY: 4,
-} as const;
+import {
+  BitWardenApiClient,
+  BITWARDEN_ITEM_TYPE,
+  type BitWardenItem,
+  type BitWardenField,
+} from "../api/BitWardenApiClient";
+import { BitWardenResourceNotFoundError } from "../api/BitWardenErrors";
 
 export class BitWardenVaultEntryRepository implements VaultEntryRepository {
   constructor(private readonly apiClient: BitWardenApiClient) {}
@@ -30,7 +28,7 @@ export class BitWardenVaultEntryRepository implements VaultEntryRepository {
       return this.mapBitWardenItemToVaultEntry(bitwardenItem);
     } catch (error) {
       // If item not found, return null
-      if (error instanceof Error && error.message.includes("404")) {
+      if (error instanceof BitWardenResourceNotFoundError) {
         return null;
       }
       throw error;

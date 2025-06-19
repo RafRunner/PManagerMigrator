@@ -3,7 +3,8 @@ import type { VaultEntryRepository } from "../../core/interfaces/repositories/Va
 import type { VaultFolderRepository } from "../../core/interfaces/repositories/VaultFolderRepository";
 import type { VaultFolderCreateProps } from "../../core/types/VaultFolderTypes";
 import { VaultFolderId } from "../../core/valueObjects/VoultFolderId";
-import type { BitWardenApiClient, BitWardenFolder } from "../api/BitWardenApiClient";
+import { BitWardenApiClient, type BitWardenFolder } from "../api/BitWardenApiClient";
+import { BitWardenResourceNotFoundError } from "../api/BitWardenErrors";
 
 export class BitWardenVaultFolderRepository implements VaultFolderRepository {
   constructor(
@@ -41,7 +42,7 @@ export class BitWardenVaultFolderRepository implements VaultFolderRepository {
       return folder;
     } catch (error) {
       // If folder not found, return null
-      if (error instanceof Error && error.message.includes("404")) {
+      if (error instanceof BitWardenResourceNotFoundError) {
         return null;
       }
       throw error;

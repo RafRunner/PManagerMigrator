@@ -1,4 +1,21 @@
 import { request } from "undici";
+import { z } from "zod";
+import {
+  BitWardenApiError,
+  BitWardenAuthenticationError,
+  BitWardenResourceNotFoundError,
+  BitWardenSchemaValidationError,
+} from "./BitWardenErrors";
+import {
+  BitWardenAuthResponseSchema,
+  BitWardenFolderSchema,
+  BitWardenItemSchema,
+  BitWardenListResponseSchema,
+  type BitWardenAuthResponse,
+  type BitWardenField,
+  type BitWardenFolder,
+  type BitWardenItem,
+} from "./BitWardenSchemas";
 
 export interface BitWardenConfig {
   apiBaseUrl: string;
@@ -7,99 +24,15 @@ export interface BitWardenConfig {
   organizationId?: string;
 }
 
-export interface BitWardenAuthResponse {
-  access_token: string;
-  expires_in: number;
-  token_type: string;
-}
+// BitWarden item types
+export const BITWARDEN_ITEM_TYPE = {
+  LOGIN: 1,
+  SECURE_NOTE: 2,
+  CARD: 3,
+  IDENTITY: 4,
+} as const;
 
-export interface BitWardenFolder {
-  id: string;
-  name: string;
-  object: "folder";
-  revisionDate: string;
-}
-
-export interface BitWardenItem {
-  id: string;
-  organizationId: string | null;
-  folderId: string | null;
-  type: 1 | 2 | 3 | 4; // 1=login, 2=secureNote, 3=card, 4=identity
-  name: string;
-  notes: string | null;
-  favorite: boolean;
-  fields: BitWardenField[] | null;
-  login: BitWardenLogin | null;
-  secureNote: BitWardenSecureNote | null;
-  card: BitWardenCard | null;
-  identity: BitWardenIdentity | null;
-  attachments: any[] | null;
-  organizationUseTotp: boolean;
-  revisionDate: string;
-  creationDate: string;
-  deletedDate: string | null;
-  object: "item";
-}
-
-export interface BitWardenField {
-  name: string;
-  value: string;
-  type: number; // 0=text, 1=hidden, 2=boolean
-  linkedId: number | null;
-}
-
-export interface BitWardenLogin {
-  username: string | null;
-  password: string | null;
-  totp: string | null;
-  passwordRevisionDate: string | null;
-  uris: BitWardenUri[] | null;
-}
-
-export interface BitWardenUri {
-  uri: string;
-  match: number | null;
-}
-
-export interface BitWardenSecureNote {
-  type: number;
-}
-
-export interface BitWardenCard {
-  cardholderName: string | null;
-  brand: string | null;
-  number: string | null;
-  expMonth: string | null;
-  expYear: string | null;
-  code: string | null;
-}
-
-export interface BitWardenIdentity {
-  title: string | null;
-  firstName: string | null;
-  middleName: string | null;
-  lastName: string | null;
-  address1: string | null;
-  address2: string | null;
-  address3: string | null;
-  city: string | null;
-  state: string | null;
-  postalCode: string | null;
-  country: string | null;
-  company: string | null;
-  email: string | null;
-  phone: string | null;
-  ssn: string | null;
-  username: string | null;
-  passportNumber: string | null;
-  licenseNumber: string | null;
-}
-
-export interface BitWardenListResponse<T> {
-  data: T[];
-  object: "list";
-  continuationToken: string | null;
-}
+export type { BitWardenField, BitWardenItem, BitWardenFolder };
 
 type RequestOptions = {
   method?: string;
@@ -136,50 +69,103 @@ export class BitWardenApiClient {
       }).toString(),
     });
 
+    const responseText = await response.body.text();
+
     if (response.statusCode !== 200) {
-      const error = await response.body.text();
-      throw new Error(`BitWarden authentication failed: ${response.statusCode} - ${error}`);
+      throw new BitWardenAuthenticationError(response.statusCode, responseText);
     }
 
-    const authData = (await response.body.json()) as BitWardenAuthResponse;
+    let authData: BitWardenAuthResponse;
+    try {
+      const parsedData = JSON.parse(responseText);
+      authData = BitWardenAuthResponseSchema.parse(parsedData);
+    } catch (error) {
+      throw new BitWardenSchemaValidationError(
+        "Invalid authentication response format",
+        "/identity/connect/token",
+        error
+      );
+    }
+
     this.accessToken = authData.access_token;
     this.tokenExpiry = new Date(Date.now() + authData.expires_in * 1000);
   }
 
-  private async makeApiRequest<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
+  private async makeApiRequest<T>(
+    endpoint: string,
+    options: RequestOptions = {},
+    schema?: z.ZodType<T>
+  ): Promise<T> {
     await this.ensureAuthenticated();
 
-    const response = await request(`${this.config.apiBaseUrl}/api${endpoint}`, {
-      ...options,
+    let url = `${this.config.apiBaseUrl}/api${endpoint}`;
+
+    const response = await request(url, {
+      method: options.method || "GET",
+      query: options.query,
       headers: {
         Authorization: `Bearer ${this.accessToken}`,
         "Content-Type": "application/json",
         ...options.headers,
       },
+      body: options.body,
     });
 
-    if (response.statusCode >= 400) {
-      const error = await response.body.text();
-      throw new Error(`BitWarden API error: ${response.statusCode} - ${error}`);
+    const responseText = await response.body.text();
+
+    // Handle different status codes
+    if (response.statusCode === 404) {
+      throw new BitWardenResourceNotFoundError(endpoint, "");
     }
 
-    return (await response.body.json()) as T;
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw new BitWardenApiError(
+        responseText || `HTTP ${response.statusCode} error`,
+        response.statusCode,
+        endpoint
+      );
+    }
+
+    // Parse and validate response if schema is provided
+    if (schema) {
+      try {
+        const parsedData = JSON.parse(responseText);
+        return schema.parse(parsedData);
+      } catch (error) {
+        throw new BitWardenSchemaValidationError("Invalid API response format", endpoint, error);
+      }
+    }
+
+    // For requests without validation (like DELETE), return parsed JSON or empty object
+    try {
+      return JSON.parse(responseText);
+    } catch {
+      return {} as T;
+    }
   }
 
   async getFolders(): Promise<BitWardenFolder[]> {
-    const response = await this.makeApiRequest<BitWardenListResponse<BitWardenFolder>>("/folders");
+    const response = await this.makeApiRequest(
+      "/folders",
+      {},
+      BitWardenListResponseSchema(BitWardenFolderSchema)
+    );
     return response.data;
   }
 
   async getFolder(id: string): Promise<BitWardenFolder> {
-    return await this.makeApiRequest<BitWardenFolder>(`/folders/${id}`);
+    return await this.makeApiRequest(`/folders/${id}`, {}, BitWardenFolderSchema);
   }
 
   async createFolder(name: string): Promise<BitWardenFolder> {
-    return await this.makeApiRequest<BitWardenFolder>("/folders", {
-      method: "POST",
-      body: JSON.stringify({ name }),
-    });
+    return await this.makeApiRequest(
+      "/folders",
+      {
+        method: "POST",
+        body: JSON.stringify({ name }),
+      },
+      BitWardenFolderSchema
+    );
   }
 
   async deleteFolder(id: string): Promise<void> {
@@ -189,28 +175,40 @@ export class BitWardenApiClient {
   }
 
   async getItems(): Promise<BitWardenItem[]> {
-    const response = await this.makeApiRequest<BitWardenListResponse<BitWardenItem>>("/items");
+    const response = await this.makeApiRequest(
+      "/items",
+      {},
+      BitWardenListResponseSchema(BitWardenItemSchema)
+    );
     return response.data;
   }
 
   async getItem(id: string): Promise<BitWardenItem> {
-    return await this.makeApiRequest<BitWardenItem>(`/items/${id}`);
+    return await this.makeApiRequest(`/items/${id}`, {}, BitWardenItemSchema);
   }
 
   async getItemsByFolder(folderId: string): Promise<BitWardenItem[]> {
-    const response = await this.makeApiRequest<BitWardenListResponse<BitWardenItem>>("/items", {
-      query: {
-        folderid: folderId,
+    const response = await this.makeApiRequest(
+      "/items",
+      {
+        query: {
+          folderid: folderId,
+        },
       },
-    });
+      BitWardenListResponseSchema(BitWardenItemSchema)
+    );
     return response.data;
   }
 
   async createItem(item: Partial<BitWardenItem>): Promise<BitWardenItem> {
-    return await this.makeApiRequest<BitWardenItem>("/items", {
-      method: "POST",
-      body: JSON.stringify(item),
-    });
+    return await this.makeApiRequest(
+      "/items",
+      {
+        method: "POST",
+        body: JSON.stringify(item),
+      },
+      BitWardenItemSchema
+    );
   }
 
   async deleteItem(id: string): Promise<void> {

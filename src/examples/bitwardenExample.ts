@@ -2,6 +2,12 @@ import { BitWardenConfigBuilder } from "../infra/config/BitWardenConfig";
 import { BitWardenRepositoryFactory } from "../infra/factories/BitWardenRepositoryFactory";
 import { VaultFolderId } from "../core/valueObjects/VoultFolderId";
 import { VaultEntryId } from "../core/valueObjects/VaultEntryId";
+import {
+  BitWardenApiError,
+  BitWardenAuthenticationError,
+  BitWardenResourceNotFoundError,
+  BitWardenSchemaValidationError,
+} from "../infra/api/BitWardenErrors";
 
 /**
  * Example demonstrating how to use BitWarden repositories
@@ -88,22 +94,53 @@ export async function bitwardenExample() {
       await entryRepository.delete(testEntry.id);
       console.log("  Test entry deleted.");
     } catch (error) {
-      console.log(
-        `  Error creating/deleting entry: ${error instanceof Error ? error.message : "Unknown error"}`
+      console.log(`  Error creating/deleting entry: ${formatError(error)}`);
+    }
+    console.log();
+
+    // Example 5: Demonstrate error handling
+    console.log("5. Testing error handling...");
+    try {
+      // Try to get a non-existent folder
+      console.log("  Testing folder not found...");
+      const nonExistentFolder = await folderRepository.findById(
+        new VaultFolderId("non-existent-id")
       );
+      console.log(`  Result: ${nonExistentFolder ? "Found" : "Not found (as expected)"}`);
+
+      // Try to get a non-existent entry
+      console.log("  Testing entry not found...");
+      const nonExistentEntry = await entryRepository.findById(new VaultEntryId("non-existent-id"));
+      console.log(`  Result: ${nonExistentEntry ? "Found" : "Not found (as expected)"}`);
+    } catch (error) {
+      console.log(`  Error during error handling test: ${formatError(error)}`);
     }
     console.log();
 
     console.log("=== Example completed successfully ===");
   } catch (error) {
-    console.error(
-      "Error in BitWarden example:",
-      error instanceof Error ? error.message : "Unknown error"
-    );
+    console.error("Error in BitWarden example:");
+    console.error(formatError(error));
     console.error("\nMake sure you have set the required environment variables:");
     console.error("- BITWARDEN_CLIENT_ID");
     console.error("- BITWARDEN_CLIENT_SECRET");
     console.error("- BITWARDEN_API_BASE_URL (optional, defaults to https://api.bitwarden.com)");
+  }
+}
+
+function formatError(error: unknown): string {
+  if (error instanceof BitWardenAuthenticationError) {
+    return `Authentication Error: ${error.message}`;
+  } else if (error instanceof BitWardenResourceNotFoundError) {
+    return `Resource Not Found: ${error.message}`;
+  } else if (error instanceof BitWardenSchemaValidationError) {
+    return `Schema Validation Error: ${error.message}`;
+  } else if (error instanceof BitWardenApiError) {
+    return `API Error (${error.statusCode}): ${error.message}`;
+  } else if (error instanceof Error) {
+    return error.message;
+  } else {
+    return String(error);
   }
 }
 
