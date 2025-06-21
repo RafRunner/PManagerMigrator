@@ -5,7 +5,7 @@ import type { VaultFolderId } from "../../valueObjects/VoultFolderId";
 
 export interface VaultEntryRepository {
   findById(id: VaultEntryId): Promise<VaultEntry | null>;
-  findByFolderId(folderId: VaultFolderId): Promise<VaultEntry[]>;
+  findByFolderId(folderId: VaultFolderId | null): Promise<VaultEntry[]>;
   create(entry: VaultEntryCreateProps): Promise<VaultEntry>;
   delete(id: VaultEntryId): Promise<void>;
 }

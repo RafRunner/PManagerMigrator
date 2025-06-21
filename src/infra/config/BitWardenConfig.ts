@@ -1,32 +1,22 @@
 export interface BitWardenConfig {
   apiBaseUrl: string;
-  clientId: string;
-  clientSecret: string;
-  organizationId?: string;
+  password: string;
 }
 
 export class BitWardenConfigBuilder {
   private config: Partial<BitWardenConfig> = {};
 
   static fromEnvironment(): BitWardenConfig {
-    const apiBaseUrl = process.env.BITWARDEN_API_BASE_URL || "https://api.bitwarden.com";
-    const clientId = process.env.BITWARDEN_CLIENT_ID;
-    const clientSecret = process.env.BITWARDEN_CLIENT_SECRET;
-    const organizationId = process.env.BITWARDEN_ORGANIZATION_ID;
+    const apiBaseUrl = process.env.BITWARDEN_API_BASE_URL || "http://localhost:8087";
+    const password = process.env.BITWARDEN_PASSWORD;
 
-    if (!clientId) {
-      throw new Error("BITWARDEN_CLIENT_ID environment variable is required");
-    }
-
-    if (!clientSecret) {
-      throw new Error("BITWARDEN_CLIENT_SECRET environment variable is required");
+    if (!password) {
+      throw new Error("BITWARDEN_PASSWORD environment variable is required");
     }
 
     return {
       apiBaseUrl,
-      clientId,
-      clientSecret,
-      organizationId,
+      password,
     };
   }
 
@@ -35,18 +25,8 @@ export class BitWardenConfigBuilder {
     return this;
   }
 
-  withClientId(clientId: string): BitWardenConfigBuilder {
-    this.config.clientId = clientId;
-    return this;
-  }
-
-  withClientSecret(clientSecret: string): BitWardenConfigBuilder {
-    this.config.clientSecret = clientSecret;
-    return this;
-  }
-
-  withOrganizationId(organizationId: string): BitWardenConfigBuilder {
-    this.config.organizationId = organizationId;
+  withPassword(password: string): BitWardenConfigBuilder {
+    this.config.password = password;
     return this;
   }
 
@@ -54,18 +34,13 @@ export class BitWardenConfigBuilder {
     if (!this.config.apiBaseUrl) {
       throw new Error("apiBaseUrl is required");
     }
-    if (!this.config.clientId) {
-      throw new Error("clientId is required");
-    }
-    if (!this.config.clientSecret) {
-      throw new Error("clientSecret is required");
+    if (!this.config.password) {
+      throw new Error("password is required");
     }
 
     return {
       apiBaseUrl: this.config.apiBaseUrl,
-      clientId: this.config.clientId,
-      clientSecret: this.config.clientSecret,
-      organizationId: this.config.organizationId,
+      password: this.config.password,
     };
   }
 }

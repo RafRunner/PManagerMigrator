@@ -21,11 +21,19 @@ export class CsvBCupVaultEntryRepository implements VaultEntryRepository {
     return this.mapRowToEntry(row);
   }
 
-  async findByFolderId(folderId: VaultFolderId): Promise<VaultEntry[]> {
+  async findByFolderId(folderId: VaultFolderId | null): Promise<VaultEntry[]> {
     const rows = await this.file.getFileContent();
 
     return rows
-      .filter((row) => row["!type"] === "entry" && row["!group_id"] === folderId.value)
+      .filter((row) => {
+        if (row["!type"] !== "entry") {
+          return false;
+        }
+        if (folderId) {
+          return row["!group_id"] === folderId.value;
+        }
+        return !row["!group_id"];
+      })
       .map((row) => this.mapRowToEntry(row));
   }
 

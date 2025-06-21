@@ -10,10 +10,9 @@ export const BitWardenAuthResponseSchema = z.object({
 });
 
 export const BitWardenFolderSchema = z.object({
-  id: z.string(),
+  id: z.string().nullable(),
   name: z.string(),
   object: z.literal("folder"),
-  revisionDate: z.string(),
 });
 
 export const BitWardenFieldSchema = z.object({
@@ -78,13 +77,12 @@ export const BitWardenItemSchema = z.object({
   name: z.string(),
   notes: z.string().nullable(),
   favorite: z.boolean(),
-  fields: z.array(BitWardenFieldSchema).nullable(),
-  login: BitWardenLoginSchema.nullable(),
-  secureNote: BitWardenSecureNoteSchema.nullable(),
-  card: BitWardenCardSchema.nullable(),
-  identity: BitWardenIdentitySchema.nullable(),
-  attachments: z.array(z.any()).nullable(),
-  organizationUseTotp: z.boolean(),
+  fields: z.array(BitWardenFieldSchema).optional(),
+  login: BitWardenLoginSchema.optional(),
+  secureNote: BitWardenSecureNoteSchema.optional(),
+  card: BitWardenCardSchema.optional(),
+  identity: BitWardenIdentitySchema.optional(),
+  attachments: z.array(z.any()).optional(),
   revisionDate: z.string(),
   creationDate: z.string(),
   deletedDate: z.string().nullable(),
@@ -93,9 +91,8 @@ export const BitWardenItemSchema = z.object({
 
 export const BitWardenListResponseSchema = <T extends z.ZodType>(itemSchema: T) =>
   z.object({
-    data: z.array(itemSchema),
     object: z.literal("list"),
-    continuationToken: z.string().nullable(),
+    data: z.array(itemSchema),
   });
 
 // Type exports for use in other files

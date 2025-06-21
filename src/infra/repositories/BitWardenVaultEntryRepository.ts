@@ -35,8 +35,8 @@ export class BitWardenVaultEntryRepository implements VaultEntryRepository {
     }
   }
 
-  async findByFolderId(folderId: VaultFolderId): Promise<VaultEntry[]> {
-    const bitwardenItems = await this.apiClient.getItemsByFolder(folderId.value);
+  async findByFolderId(folderId: VaultFolderId | null): Promise<VaultEntry[]> {
+    const bitwardenItems = await this.apiClient.getItemsByFolder(folderId?.value || null);
     return bitwardenItems.map((item) => this.mapBitWardenItemToVaultEntry(item));
   }
 
@@ -110,7 +110,7 @@ export class BitWardenVaultEntryRepository implements VaultEntryRepository {
     }
   }
 
-  private extractExtraFields(fields: BitWardenField[] | null): Record<string, string> {
+  private extractExtraFields(fields: BitWardenField[] | undefined): Record<string, string> {
     if (!fields) {
       return {};
     }
@@ -150,14 +150,14 @@ export class BitWardenVaultEntryRepository implements VaultEntryRepository {
     const baseItem: Partial<BitWardenItem> = {
       name: props.name,
       folderId: props.folderId?.value || null,
-      fields: props.extraFields
-        ? Object.entries(props.extraFields).map(([name, value]) => ({
-            name,
-            value,
-            type: 0, // Text field
-            linkedId: null,
-          }))
-        : null,
+      fields:
+        props.extraFields &&
+        Object.entries(props.extraFields).map(([name, value]) => ({
+          name,
+          value,
+          type: 0, // Text field
+          linkedId: null,
+        })),
     };
 
     if ("password" in props && "username" in props) {
@@ -180,9 +180,6 @@ export class BitWardenVaultEntryRepository implements VaultEntryRepository {
               ]
             : null,
         },
-        secureNote: null,
-        card: null,
-        identity: null,
       };
     } else if ("content" in props) {
       // NoteEntry
@@ -191,12 +188,9 @@ export class BitWardenVaultEntryRepository implements VaultEntryRepository {
         ...baseItem,
         type: BITWARDEN_ITEM_TYPE.SECURE_NOTE,
         notes: noteProps.content || "",
-        login: null,
         secureNote: {
           type: 0, // Generic note
         },
-        card: null,
-        identity: null,
       };
     } else if (
       "cardNumber" in props &&
@@ -209,8 +203,6 @@ export class BitWardenVaultEntryRepository implements VaultEntryRepository {
       return {
         ...baseItem,
         type: BITWARDEN_ITEM_TYPE.CARD,
-        login: null,
-        secureNote: null,
         card: {
           cardholderName: cardProps.cardHolderName,
           brand: cardProps.cardCompany,
@@ -223,7 +215,6 @@ export class BitWardenVaultEntryRepository implements VaultEntryRepository {
             : null,
           code: cardProps.cvv,
         },
-        identity: null,
       };
     }
 

@@ -2,9 +2,10 @@ export class BitWardenApiError extends Error {
   constructor(
     message: string,
     public readonly statusCode: number,
-    public readonly endpoint: string
+    public readonly endpoint: string,
+    cause?: any
   ) {
-    super(message);
+    super(message, { cause });
     this.name = "BitWardenApiError";
   }
 }
@@ -31,9 +32,10 @@ export class BitWardenSchemaValidationError extends Error {
   constructor(
     message: string,
     public readonly endpoint: string,
-    public readonly zodError: any
+    public readonly zodError: any,
+    public readonly inputData?: any
   ) {
-    super(message);
+    super(`${message} - Input: ${JSON.stringify(inputData)}`, { cause: zodError });
     this.name = "BitWardenSchemaValidationError";
   }
 }

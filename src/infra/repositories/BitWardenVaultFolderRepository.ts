@@ -17,26 +17,63 @@ export class BitWardenVaultFolderRepository implements VaultFolderRepository {
 
     // Filter out any folders that might be considered "trash" or deleted
     const activeFolders = bitwardenFolders.filter(
-      (folder) => folder.name.toLowerCase() !== "trash" && folder.name.toLowerCase() !== "deleted"
+      (folder) =>
+        folder.name.toLowerCase() !== "trash" &&
+        folder.name.toLowerCase() !== "deleted" &&
+        !!folder.id
     );
+
+    const idByName = new Map<string, VaultFolderId>();
 
     const folders = await Promise.all(
       activeFolders.map(async (bitwardenFolder) => {
-        const folder = this.mapBitWardenFolderToVaultFolder(bitwardenFolder);
-        const entries = await this.entryRepository.findByFolderId(folder.id);
-        folder.addEntrys(entries);
-        return folder;
+        const entries = await this.entryRepository.findByFolderId(
+          new VaultFolderId(bitwardenFolder.id!)
+        );
+
+        idByName.set(bitwardenFolder.name, new VaultFolderId(bitwardenFolder.id!));
+
+        return { bitwardenFolder, entries };
       })
     );
 
-    // Only return folders that have entries
-    return folders.filter((folder) => folder.entries.length > 0);
+    return folders.map(({ bitwardenFolder, entries }) => {
+      const path = bitwardenFolder.name;
+
+      const parts = path.split("/");
+      let parentId: VaultFolderId | null = null;
+
+      if (parts.length > 1) {
+        const parentPath = parts.slice(0, -1).join("/");
+        const parent = idByName.get(parentPath);
+
+        if (parent) {
+          parentId = parent;
+        }
+      }
+
+      const folder = this.mapBitWardenFolderToVaultFolder(bitwardenFolder, parentId);
+      folder.addEntrys(entries);
+
+      return folder;
+    });
   }
 
   async findById(id: VaultFolderId): Promise<VaultFolder | null> {
     try {
       const bitwardenFolder = await this.apiClient.getFolder(id.value);
-      const folder = this.mapBitWardenFolderToVaultFolder(bitwardenFolder);
+
+      const parentName = bitwardenFolder.name.split("/").at(-2);
+      let parentId: VaultFolderId | null = null;
+
+      if (parentName) {
+        const parent = await this.apiClient.getFolderByName(parentName);
+        if (parent && parent.id) {
+          parentId = new VaultFolderId(parent.id);
+        }
+      }
+
+      const folder = this.mapBitWardenFolderToVaultFolder(bitwardenFolder, parentId);
       const entries = await this.entryRepository.findByFolderId(folder.id);
       folder.addEntrys(entries);
       return folder;
@@ -50,22 +87,37 @@ export class BitWardenVaultFolderRepository implements VaultFolderRepository {
   }
 
   async create(folderProps: VaultFolderCreateProps): Promise<VaultFolder> {
-    const bitwardenFolder = await this.apiClient.createFolder(folderProps.name);
-    return this.mapBitWardenFolderToVaultFolder(bitwardenFolder);
+    let fullName = folderProps.name;
+    let parentId: VaultFolderId | null = null;
+
+    if (folderProps.parentId) {
+      const parentFolder = await this.findById(folderProps.parentId);
+      if (parentFolder) {
+        fullName = `${parentFolder.name}/${fullName}`;
+        parentId = parentFolder.id;
+      }
+    }
+    const bitwardenFolder = await this.apiClient.createFolder(fullName);
+    return this.mapBitWardenFolderToVaultFolder(bitwardenFolder, parentId);
   }
 
   async delete(id: VaultFolderId): Promise<void> {
     await this.apiClient.deleteFolder(id.value);
   }
 
-  private mapBitWardenFolderToVaultFolder(bitwardenFolder: BitWardenFolder): VaultFolder {
-    // BitWarden folders don't have explicit parent-child relationships in the API
-    // They use a flat structure, so parentId will always be null
-    return new VaultFolder(
-      new VaultFolderId(bitwardenFolder.id),
-      bitwardenFolder.name.trim(),
-      null, // BitWarden API doesn't support folder hierarchy in the same way
-      []
-    );
+  private mapBitWardenFolderToVaultFolder(
+    bitwardenFolder: BitWardenFolder,
+    parentId: VaultFolderId | null
+  ): VaultFolder {
+    const folderId = bitwardenFolder.id;
+    if (!folderId) {
+      // Bitwarden has a special "folder" to represent no folder
+      throw new Error("Bitwarden 'No Folder' should not be mapped.");
+    }
+
+    const parts = bitwardenFolder.name.trim().split("/");
+    const name = parts.pop() as string;
+
+    return new VaultFolder(new VaultFolderId(folderId), name, parentId, []);
   }
 }
