@@ -1,5 +1,6 @@
 import { VaultEntryId } from "../valueObjects/VaultEntryId";
 import { VaultFolderId } from "../valueObjects/VoultFolderId";
+import type { VaultEntryCreateProps } from "../types/VaultEntryTypes";
 import { Entity } from "./Entity";
 
 export abstract class VaultEntry extends Entity<VaultEntryId> {
@@ -20,4 +21,6 @@ export abstract class VaultEntry extends Entity<VaultEntryId> {
       extraFields: this.extraFields,
     };
   }
+
+  public abstract toCreateProps(): VaultEntryCreateProps;
 }

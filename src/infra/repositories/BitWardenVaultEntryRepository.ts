@@ -16,6 +16,7 @@ import {
   BITWARDEN_ITEM_TYPE,
   type BitWardenItem,
   type BitWardenField,
+  BITWARDEN_FIELD_TYPE,
 } from "../api/BitWardenApiClient";
 import { BitWardenResourceNotFoundError } from "../api/BitWardenErrors";
 
@@ -72,6 +73,14 @@ export class BitWardenVaultEntryRepository implements VaultEntryRepository {
         return new NoteEntry(id, name, folderId, extraFields, item.notes || "");
 
       case BITWARDEN_ITEM_TYPE.CARD:
+        // BitWarden doesn't have validFrom for cards, so we look for it in extra fields
+        const validFrom =
+          extraFields.validFrom ??
+          extraFields.valid_from ??
+          extraFields["Valid From"] ??
+          extraFields["valid from"] ??
+          extraFields["valid-from"];
+
         return new CreditCardEntry(
           id,
           name,
@@ -81,11 +90,12 @@ export class BitWardenVaultEntryRepository implements VaultEntryRepository {
           item.card?.number || "",
           item.card?.cardholderName || "",
           this.parseCardExpirationDate(item.card?.expMonth, item.card?.expYear),
-          null, // BitWarden doesn't have validFrom for cards
+          CreditCardEntry.parseMMYYYYDate(validFrom),
           item.card?.code || ""
         );
 
       case BITWARDEN_ITEM_TYPE.IDENTITY:
+        // TODO create a IdentityEntry class if needed
         // Treat identity items as password entries with extra information
         return new PasswordEntry(
           id,
@@ -155,8 +165,7 @@ export class BitWardenVaultEntryRepository implements VaultEntryRepository {
         Object.entries(props.extraFields).map(([name, value]) => ({
           name,
           value,
-          type: 0, // Text field
-          linkedId: null,
+          type: BITWARDEN_FIELD_TYPE.TEXT,
         })),
     };
 
@@ -175,7 +184,7 @@ export class BitWardenVaultEntryRepository implements VaultEntryRepository {
             ? [
                 {
                   uri: passwordProps.url,
-                  match: null,
+                  match: 0,
                 },
               ]
             : null,
@@ -200,6 +209,16 @@ export class BitWardenVaultEntryRepository implements VaultEntryRepository {
     ) {
       // CreditCardEntry
       const cardProps = props as CreditCardEntryCreateProps;
+      if (cardProps.validFrom) {
+        baseItem.fields = baseItem.fields || [];
+
+        baseItem.fields.push({
+          name: "Valid From",
+          value: CreditCardEntry.formatDateToMMYYYY(cardProps.validFrom)!,
+          type: BITWARDEN_FIELD_TYPE.TEXT,
+        });
+      }
+
       return {
         ...baseItem,
         type: BITWARDEN_ITEM_TYPE.CARD,

@@ -19,7 +19,7 @@ export const BitWardenFieldSchema = z.object({
   name: z.string(),
   value: z.string(),
   type: z.number(),
-  linkedId: z.number().nullable(),
+  //   linkedId: z.number().nullable(),
 });
 
 export const BitWardenUriSchema = z.object({

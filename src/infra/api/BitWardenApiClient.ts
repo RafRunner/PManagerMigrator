@@ -28,6 +28,13 @@ export const BITWARDEN_ITEM_TYPE = {
   IDENTITY: 4,
 } as const;
 
+export const BITWARDEN_FIELD_TYPE = {
+  TEXT: 0,
+  HIDDEN: 1,
+  BOOLEAN: 2,
+  // There is a type for linked values, but it's not used in this implementation. See https://bitwarden.com/help/custom-fields/
+} as const;
+
 export type { BitWardenField, BitWardenItem, BitWardenFolder };
 
 type RequestOptions = {
@@ -67,6 +74,8 @@ export class BitWardenApiClient {
   }
 
   private async unlock(): Promise<void> {
+    console.log("Unlocking BitWarden...");
+
     const response = await request(`${this.config.apiBaseUrl}/unlock`, {
       method: "POST",
       headers: {
@@ -117,7 +126,7 @@ export class BitWardenApiClient {
     }
 
     if (isDefaultBitwardenResponse(responseData) && responseData.success === false) {
-      if (responseData.message === "Not found.") {
+      if (responseData.message === "Resource not found.") {
         throw new BitWardenResourceNotFoundError(methodAndEndpoint, "");
       }
 
@@ -186,20 +195,45 @@ export class BitWardenApiClient {
   }
 
   async createFolder(name: string): Promise<BitWardenFolder> {
-    return await this.makeApiRequest(
-      "object/folder",
-      {
-        method: "POST",
-        body: JSON.stringify({ name }),
-      },
-      BitWardenFolderSchema
-    );
+    try {
+      return await this.makeApiRequest(
+        "object/folder",
+        {
+          method: "POST",
+          body: JSON.stringify({ name }),
+        },
+        BitWardenFolderSchema
+      );
+    } catch (error) {
+      // Temporary workaround for BitWarden API bug
+      if (error instanceof BitWardenApiError) {
+        if (
+          error.statusCode === 400 &&
+          error.message.includes("Cannot read properties of undefined (reading 'decrypt')")
+        ) {
+          const existingFolder = await this.getFolderByName(name);
+          if (existingFolder) {
+            console.warn(`Bitwarden bug. Folder was created with id ${existingFolder.id}`);
+            return existingFolder;
+          }
+        }
+      }
+      throw error;
+    }
   }
 
   async deleteFolder(id: string): Promise<void> {
-    await this.makeApiRequest(`object/folder/${id}`, {
-      method: "DELETE",
-    });
+    try {
+      await this.makeApiRequest(`object/folder/${id}`, {
+        method: "DELETE",
+      });
+    } catch (error) {
+      if (error instanceof BitWardenResourceNotFoundError) {
+        console.warn(`Folder with id ${id} not found, skipping deletion.`);
+        return;
+      }
+      throw error;
+    }
   }
 
   async getItems(): Promise<BitWardenItem[]> {
@@ -240,8 +274,16 @@ export class BitWardenApiClient {
   }
 
   async deleteItem(id: string): Promise<void> {
-    await this.makeApiRequest(`object/item/${id}`, {
-      method: "DELETE",
-    });
+    try {
+      await this.makeApiRequest(`object/item/${id}`, {
+        method: "DELETE",
+      });
+    } catch (error) {
+      if (error instanceof BitWardenResourceNotFoundError) {
+        console.warn(`Entry with id ${id} not found, skipping deletion.`);
+        return;
+      }
+      throw error;
+    }
   }
 }

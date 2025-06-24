@@ -1,6 +1,9 @@
 import { CsvBCupVaultEntryRepository } from "./src/infra/repositories/CsvBCupVaultEntryRepository";
 import { CsvFile } from "./src/infra/files/CsvFile.ts";
 import { CsvBCupVaultFolderRepository } from "./src/infra/repositories/CsvBCupVaultFolderRepository.ts";
+import { BitWardenConfigBuilder } from "./src/infra/config/BitWardenConfig.ts";
+import { BitWardenRepositoryFactory } from "./src/infra/factories/BitWardenRepositoryFactory.ts";
+import { MigrateUseCase } from "./src/core/usecases/MigrateUseCase.ts";
 
 const [filePath] = Bun.argv.slice(2);
 
@@ -11,17 +14,27 @@ if (!filePath) {
 
 const file = Bun.file(filePath);
 const csvFile = new CsvFile(file);
-const repository = new CsvBCupVaultFolderRepository(
-  csvFile,
-  new CsvBCupVaultEntryRepository(csvFile)
-);
+const bCupEntryRepository = new CsvBCupVaultEntryRepository(csvFile);
+const bCupFolderRepository = new CsvBCupVaultFolderRepository(csvFile, bCupEntryRepository);
 
-const folders = await repository.findAll();
+const config = BitWardenConfigBuilder.fromEnvironment();
 
-console.log(
-  JSON.stringify(
-    folders.map((entry) => entry.toJSON()),
-    null,
-    2
-  )
-);
+const factory = new BitWardenRepositoryFactory(config);
+const bitWardenFolderRepository = factory.getFolderRepository();
+const bitWardenEntryRepository = factory.getEntryRepository();
+
+const migrateUseCase = new MigrateUseCase();
+
+try {
+  await migrateUseCase.execute({
+    sourceFolderRepository: bCupFolderRepository,
+    sourceEntryRepository: bCupEntryRepository,
+
+    targetFolderRepository: bitWardenFolderRepository,
+    targetEntryRepository: bitWardenEntryRepository,
+
+    clearTarget: true,
+  });
+} catch (error) {
+  console.error("Migration failed:\n", error);
+}

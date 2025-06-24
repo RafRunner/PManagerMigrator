@@ -61,11 +61,11 @@ export class CsvBCupVaultFolderRepository implements VaultFolderRepository {
       throw new Error("Row does not have a name field.");
     }
 
-    return new VaultFolder(
-      new VaultFolderId(groupId),
-      name.trim(),
-      parentId ? new VaultFolderId(parentId) : null,
-      []
-    );
+    let parentFolderId: VaultFolderId | null = null;
+    if (parentId && parentId !== "0") {
+      parentFolderId = new VaultFolderId(parentId);
+    }
+
+    return new VaultFolder(new VaultFolderId(groupId), name.trim(), parentFolderId, []);
   }
 }

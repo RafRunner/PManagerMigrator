@@ -1,5 +1,6 @@
 import { VaultEntryId } from "../valueObjects/VaultEntryId";
 import { VaultFolderId } from "../valueObjects/VoultFolderId";
+import type { PasswordEntryCreateProps } from "../types/VaultEntryTypes";
 import { VaultEntry } from "./VaultEntry";
 
 export class PasswordEntry extends VaultEntry {
@@ -30,6 +31,17 @@ export class PasswordEntry extends VaultEntry {
       username: this.username,
       password: this.password,
       url: this.url ?? undefined,
+    };
+  }
+
+  public toCreateProps(): PasswordEntryCreateProps {
+    return {
+      name: this.name,
+      folderId: this.folderId,
+      extraFields: this.extraFields,
+      username: this.username,
+      password: this.password,
+      url: this.url,
     };
   }
 }

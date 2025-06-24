@@ -1,5 +1,6 @@
 import { VaultEntryId } from "../valueObjects/VaultEntryId";
 import { VaultFolderId } from "../valueObjects/VoultFolderId";
+import type { NoteEntryCreateProps } from "../types/VaultEntryTypes";
 import { VaultEntry } from "./VaultEntry";
 
 export class NoteEntry extends VaultEntry {
@@ -16,6 +17,15 @@ export class NoteEntry extends VaultEntry {
   public override toJSON() {
     return {
       ...this.toJSONCore(),
+      content: this.content,
+    };
+  }
+
+  public toCreateProps(): NoteEntryCreateProps {
+    return {
+      name: this.name,
+      folderId: this.folderId,
+      extraFields: this.extraFields,
       content: this.content,
     };
   }

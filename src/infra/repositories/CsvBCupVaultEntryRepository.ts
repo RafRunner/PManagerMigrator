@@ -87,8 +87,8 @@ export class CsvBCupVaultEntryRepository implements VaultEntryRepository {
         cardCompany || "",
         cardNumber || "",
         cardHolderName || "",
-        this.parseMMYYYYDate(expirationDate),
-        this.parseMMYYYYDate(validFrom),
+        CreditCardEntry.parseMMYYYYDate(expirationDate),
+        CreditCardEntry.parseMMYYYYDate(validFrom),
         cvv
       );
     }
@@ -105,21 +105,6 @@ export class CsvBCupVaultEntryRepository implements VaultEntryRepository {
       password || "",
       actualUrl
     );
-  }
-
-  private parseMMYYYYDate(dateString: string | undefined): Date | null {
-    if (!dateString || dateString.length !== 6) {
-      return null;
-    }
-
-    const month = parseInt(dateString.substring(0, 2), 10);
-    const year = parseInt(dateString.substring(2, 6), 10);
-
-    if (month < 1 || month > 12 || year < 1000) {
-      return null;
-    }
-
-    return new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0));
   }
 
   private removeUnnecessaryFields(row: Record<string, string>): Record<string, string> {
