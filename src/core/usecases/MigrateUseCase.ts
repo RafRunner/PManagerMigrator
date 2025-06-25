@@ -7,33 +7,36 @@ import type { VaultFolderId } from "../valueObjects/VoultFolderId";
 import { AbstractUseCase } from "./AbstractUseCase";
 
 interface MigrateUseCaseInput {
-  sourceFolderRepository: VaultFolderRepository;
-  sourceEntryRepository: VaultEntryRepository;
-
-  targetFolderRepository: VaultFolderRepository;
-  targetEntryRepository: VaultEntryRepository;
-
   clearTarget: boolean;
 }
 
 export class MigrateUseCase extends AbstractUseCase<MigrateUseCaseInput, void> {
+  constructor(
+    private readonly sourceFolderRepository: VaultFolderRepository,
+    private readonly sourceEntryRepository: VaultEntryRepository,
+    private readonly targetFolderRepository: VaultFolderRepository,
+    private readonly targetEntryRepository: VaultEntryRepository
+  ) {
+    super();
+  }
+
   protected override async executeCore(input: MigrateUseCaseInput): Promise<void> {
     console.log("Starting migration...");
 
     const [sourceFolders, targetFolders] = await Promise.all([
-      input.sourceFolderRepository.findAll(),
-      input.targetFolderRepository.findAll(),
+      this.sourceFolderRepository.findAll(),
+      this.targetFolderRepository.findAll(),
     ]);
 
     const [sourceRootEntries, targetRootEntries] = await Promise.all([
-      input.sourceEntryRepository.findByFolderId(null),
-      input.targetEntryRepository.findByFolderId(null),
+      this.sourceEntryRepository.findByFolderId(null),
+      this.targetEntryRepository.findByFolderId(null),
     ]);
 
     let targetVault = new Vault();
 
     if (input.clearTarget) {
-      await this.clearTargetVault(targetFolders, input, targetRootEntries);
+      await this.clearTargetVault(targetFolders, targetRootEntries);
     } else {
       targetVault.addFolders(targetFolders);
       targetVault.addEntries(targetRootEntries);
@@ -54,25 +57,21 @@ export class MigrateUseCase extends AbstractUseCase<MigrateUseCaseInput, void> {
     console.log("Migration completed successfully.");
   }
 
-  private async clearTargetVault(
-    targetFolders: VaultFolder[],
-    input: MigrateUseCaseInput,
-    targetRootEntries: VaultEntry[]
-  ) {
+  private async clearTargetVault(targetFolders: VaultFolder[], targetRootEntries: VaultEntry[]) {
     console.log("Clearing target folders and entries...");
 
     for (const folder of targetFolders) {
       for (const entry of folder.entries) {
         console.log(`Deleting entry: ${entry.name} from folder: ${folder.name}`);
-        await input.targetEntryRepository.delete(entry.id);
+        await this.targetEntryRepository.delete(entry.id);
       }
       console.log(`Deleting folder: ${folder.name}`);
-      await input.targetFolderRepository.delete(folder.id);
+      await this.targetFolderRepository.delete(folder.id);
     }
 
     for (const entry of targetRootEntries) {
       console.log(`Deleting root entry: ${entry.name}`);
-      await input.targetEntryRepository.delete(entry.id);
+      await this.targetEntryRepository.delete(entry.id);
     }
   }
 
@@ -99,7 +98,7 @@ export class MigrateUseCase extends AbstractUseCase<MigrateUseCaseInput, void> {
     }
 
     if (!newFolder) {
-      newFolder = await input.targetFolderRepository.create({
+      newFolder = await this.targetFolderRepository.create({
         name: sourceFolder.name,
         parentId: parentFolderId,
       });
@@ -114,26 +113,26 @@ export class MigrateUseCase extends AbstractUseCase<MigrateUseCaseInput, void> {
 
   private async migrateEntries(
     entries: VaultEntry[],
-    newFolder: VaultFolder | null,
+    targetFolder: VaultFolder | null,
     targetVault: Vault,
     input: MigrateUseCaseInput
   ) {
     for (const entry of entries) {
-      console.log(`Migrating entry: ${entry.name} to folder: ${newFolder?.name}`);
+      console.log(`Migrating entry: ${entry.name} to folder: ${targetFolder?.name || "<root>"}`);
 
       if (!input.clearTarget) {
         const existingEntry = targetVault.findEntryByName(entry.name);
 
         // Check if the entry already exists in the target vault (needs to match both name and folder)
-        if (existingEntry && existingEntry.folderName === newFolder?.name) {
+        if (existingEntry && existingEntry.folderName === targetFolder?.name) {
           console.log(`Entry already exists: ${existingEntry.entry.name}, skipping.`);
           continue;
         }
       }
 
-      await input.targetEntryRepository.create({
+      await this.targetEntryRepository.create({
         ...entry.toCreateProps(),
-        folderId: newFolder?.id ?? null,
+        folderId: targetFolder?.id ?? null,
       });
     }
   }

@@ -1,41 +1,29 @@
-// Rate limiter class using token bucket algorithm
 export class RateLimiter {
-  private tokens: number;
-  private lastRefill: number;
   private readonly maxTokens: number;
-  private readonly refillRate: number; // tokens per millisecond
+  private readonly requestTimeline: number[] = [];
 
   constructor(maxRequestsPerMinute: number) {
     this.maxTokens = maxRequestsPerMinute;
-    this.tokens = maxRequestsPerMinute;
-    this.lastRefill = Date.now();
-    // Refill tokens at a rate to reach maxTokens over 60 seconds
-    this.refillRate = maxRequestsPerMinute / (60 * 1000);
-  }
-
-  private refillTokens(): void {
-    const now = Date.now();
-    const timePassed = now - this.lastRefill;
-    const tokensToAdd = timePassed * this.refillRate;
-
-    this.tokens = Math.min(this.maxTokens, this.tokens + tokensToAdd);
-    this.lastRefill = now;
   }
 
   async waitForToken(): Promise<void> {
-    this.refillTokens();
+    const now = Date.now();
 
-    if (this.tokens >= 1) {
-      this.tokens -= 1;
+    if (this.requestTimeline.length < this.maxTokens) {
+      this.requestTimeline.push(now);
       return;
     }
 
-    // Calculate how long to wait for the next token
-    const timeToWait = Math.ceil((1 - this.tokens) / this.refillRate);
-    console.log(`Rate limit exceeded, waiting for ${timeToWait} ms`);
-    await new Promise((resolve) => setTimeout(resolve, timeToWait));
+    const oldestRequest = this.requestTimeline[0];
+    const elapsed = now - oldestRequest!;
 
-    // Try again after waiting
-    return this.waitForToken();
+    if (elapsed < 60000) {
+      const timeToWait = 60000 - elapsed;
+      console.log(`Rate limit exceeded, waiting for ${timeToWait} ms`);
+      await new Promise((resolve) => setTimeout(resolve, timeToWait));
+    }
+
+    this.requestTimeline.shift();
+    this.requestTimeline.push(Date.now());
   }
 }

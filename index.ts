@@ -1,9 +1,9 @@
-import { CsvBCupVaultEntryRepository } from "./src/infra/repositories/CsvBCupVaultEntryRepository";
 import { CsvFile } from "./src/infra/files/CsvFile.ts";
-import { CsvBCupVaultFolderRepository } from "./src/infra/repositories/CsvBCupVaultFolderRepository.ts";
 import { BitWardenConfigBuilder } from "./src/infra/config/BitWardenConfig.ts";
 import { BitWardenRepositoryFactory } from "./src/infra/factories/BitWardenRepositoryFactory.ts";
 import { MigrateUseCase } from "./src/core/usecases/MigrateUseCase.ts";
+import { RateLimiter } from "./src/infra/api/RateLimiter.ts";
+import { CsvBCupRepositoryFactory } from "./src/infra/factories/CsvBCupRepositoryFactory.ts";
 
 const [filePath] = Bun.argv.slice(2);
 
@@ -14,25 +14,26 @@ if (!filePath) {
 
 const file = Bun.file(filePath);
 const csvFile = new CsvFile(file);
-const bCupEntryRepository = new CsvBCupVaultEntryRepository(csvFile);
-const bCupFolderRepository = new CsvBCupVaultFolderRepository(csvFile, bCupEntryRepository);
+
+const bCupFactory = new CsvBCupRepositoryFactory(csvFile);
+const bCupEntryRepository = bCupFactory.getEntryRepository();
+const bCupFolderRepository = bCupFactory.getFolderRepository();
 
 const config = BitWardenConfigBuilder.fromEnvironment();
 
-const factory = new BitWardenRepositoryFactory(config);
-const bitWardenFolderRepository = factory.getFolderRepository();
-const bitWardenEntryRepository = factory.getEntryRepository();
+const bitFactory = new BitWardenRepositoryFactory(config);
+const bitWardenFolderRepository = bitFactory.getFolderRepository();
+const bitWardenEntryRepository = bitFactory.getEntryRepository();
 
-const migrateUseCase = new MigrateUseCase();
+const migrateUseCase = new MigrateUseCase(
+  bCupFolderRepository,
+  bCupEntryRepository,
+  bitWardenFolderRepository,
+  bitWardenEntryRepository
+);
 
 try {
   await migrateUseCase.execute({
-    sourceFolderRepository: bCupFolderRepository,
-    sourceEntryRepository: bCupEntryRepository,
-
-    targetFolderRepository: bitWardenFolderRepository,
-    targetEntryRepository: bitWardenEntryRepository,
-
     clearTarget: false,
   });
 } catch (error) {
