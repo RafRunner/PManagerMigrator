@@ -19,9 +19,8 @@ export class CreditCardEntry extends VaultEntry {
     super(id, name, folderId, extraFields);
   }
 
-  public override toJSON(): Record<string, any> {
+  protected override toJSONExtended(): Record<string, any> {
     return {
-      ...this.toJSONCore(),
       cardCompany: this.cardCompany,
       cardNumber: this.cardNumber,
       cardHolderName: this.cardHolderName,

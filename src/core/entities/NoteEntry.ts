@@ -14,9 +14,8 @@ export class NoteEntry extends VaultEntry {
     super(id, name, folderId, extraFields);
   }
 
-  public override toJSON() {
+  protected override toJSONExtended(): Record<string, any> {
     return {
-      ...this.toJSONCore(),
       content: this.content,
     };
   }

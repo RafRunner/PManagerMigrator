@@ -13,14 +13,17 @@ export abstract class VaultEntry extends Entity<VaultEntryId> {
     super(id);
   }
 
-  protected toJSONCore(): any {
+  public override toJSON(): Record<string, any> {
     return {
       id: this.id,
       name: this.name,
       folderId: this.folderId,
       extraFields: this.extraFields,
+      ...this.toJSONExtended(),
     };
   }
+
+  protected abstract toJSONExtended(): Record<string, any>;
 
   public abstract toCreateProps(): VaultEntryCreateProps;
 }

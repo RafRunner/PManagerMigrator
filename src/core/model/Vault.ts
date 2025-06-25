@@ -9,18 +9,11 @@ export class Vault {
   private rootFolders: VaultFolder[] = [];
   private rootEntries: VaultEntry[] = [];
 
-  public addFolder(folder: VaultFolder): void {
-    this.folders.set(folder.id.value, folder);
-    this.updateHierarchy();
-  }
-
-  public addEntry(entry: VaultEntry): void {
-    this.entries.set(entry.id.value, entry);
-    this.updateHierarchy();
-  }
-
   public addFolders(folders: VaultFolder[]): void {
-    folders.forEach((folder) => this.folders.set(folder.id.value, folder));
+    folders.forEach((folder) => {
+      this.folders.set(folder.id.value, folder);
+      folder.entries.forEach((entry) => this.entries.set(entry.id.value, entry));
+    });
     this.updateHierarchy();
   }
 
@@ -29,12 +22,32 @@ export class Vault {
     this.updateHierarchy();
   }
 
-  public findFolder(id: VaultFolderId): VaultFolder | undefined {
-    return this.folders.get(id.value);
+  public findFolder(id: VaultFolderId): VaultFolder | null {
+    return this.folders.get(id.value) ?? null;
   }
 
-  public findEntry(id: VaultEntryId): VaultEntry | undefined {
-    return this.entries.get(id.value);
+  public findFolderByName(name: string): { folder: VaultFolder; parentName?: string } | null {
+    for (const folder of this.folders.values()) {
+      if (folder.name === name) {
+        const parentFolder = this.getParentFolder(folder);
+        return { folder, parentName: parentFolder?.name };
+      }
+    }
+    return null;
+  }
+
+  public findEntry(id: VaultEntryId): VaultEntry | null {
+    return this.entries.get(id.value) ?? null;
+  }
+
+  public findEntryByName(name: string): { entry: VaultEntry; folderName?: string } | null {
+    for (const entry of this.entries.values()) {
+      if (entry.name === name) {
+        const folder = this.folders.get(entry.folderId?.value ?? "");
+        return { entry, folderName: folder?.name };
+      }
+    }
+    return null;
   }
 
   public getRootFolders(): readonly VaultFolder[] {
@@ -55,6 +68,13 @@ export class Vault {
 
   public getChildFolders(parentId: VaultFolderId): VaultFolder[] {
     return Array.from(this.folders.values()).filter((folder) => parentId.equals(folder.parentId));
+  }
+
+  public getParentFolder(folder: VaultFolder): VaultFolder | null {
+    if (folder.parentId === null) {
+      return null;
+    }
+    return this.folders.get(folder.parentId.value) ?? null;
   }
 
   public toJSON(): any {

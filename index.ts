@@ -33,7 +33,7 @@ try {
     targetFolderRepository: bitWardenFolderRepository,
     targetEntryRepository: bitWardenEntryRepository,
 
-    clearTarget: true,
+    clearTarget: false,
   });
 } catch (error) {
   console.error("Migration failed:\n", error);

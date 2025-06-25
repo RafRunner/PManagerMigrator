@@ -25,9 +25,8 @@ export class PasswordEntry extends VaultEntry {
     }
   }
 
-  public override toJSON() {
+  public override toJSONExtended(): Record<string, any> {
     return {
-      ...this.toJSONCore(),
       username: this.username,
       password: this.password,
       url: this.url ?? undefined,

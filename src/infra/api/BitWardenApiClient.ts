@@ -14,6 +14,7 @@ import {
   type BitWardenFolder,
   type BitWardenItem,
 } from "./BitWardenSchemas";
+import { RateLimiter } from "./RateLimiter";
 
 export interface BitWardenConfig {
   apiBaseUrl: string;
@@ -62,8 +63,11 @@ function isDefaultBitwardenResponse(obj: unknown): obj is DefaultBitwardenRespon
 
 export class BitWardenApiClient {
   private unlocked = false;
+  private rateLimiter: RateLimiter;
 
-  constructor(private readonly config: BitWardenConfig) {}
+  constructor(private readonly config: BitWardenConfig) {
+    this.rateLimiter = new RateLimiter(50);
+  }
 
   private async ensureAuthenticated(): Promise<void> {
     if (this.unlocked) {
@@ -75,6 +79,8 @@ export class BitWardenApiClient {
 
   private async unlock(): Promise<void> {
     console.log("Unlocking BitWarden...");
+
+    await this.rateLimiter.waitForToken();
 
     const response = await request(`${this.config.apiBaseUrl}/unlock`, {
       method: "POST",
@@ -104,6 +110,8 @@ export class BitWardenApiClient {
 
     const url = `${this.config.apiBaseUrl}/${endpoint}`;
     const method = options.method || "GET";
+
+    await this.rateLimiter.waitForToken();
 
     const response = await request(url, {
       method,
