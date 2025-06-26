@@ -15,7 +15,7 @@ export abstract class VaultEntry extends Entity<VaultEntryId> {
 
   public override toJSON(): Record<string, any> {
     return {
-      id: this.id,
+      id: this.id.toJSON(),
       name: this.name,
       folderId: this.folderId,
       extraFields: this.extraFields,

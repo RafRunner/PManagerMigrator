@@ -1,11 +1,12 @@
 import parseCsv from "csv-simple-parser";
+import type { RecordProvider } from "../../core/interfaces/services/RecordReader";
 
-export class CsvFile {
+export class CsvFile implements RecordProvider {
   private fileContent: Record<string, string>[] | null = null;
 
   constructor(private readonly file: Bun.BunFile) {}
 
-  public async getFileContent(): Promise<Record<string, string>[]> {
+  public async getRecords(): Promise<Record<string, string>[]> {
     if (this.fileContent) {
       return this.fileContent;
     }

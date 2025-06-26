@@ -45,12 +45,14 @@ export class CreditCardEntry extends VaultEntry {
   }
 
   public static parseMMYYYYDate(dateString: string | undefined): Date | null {
-    if (!dateString || dateString.length !== 6) {
+    if (!dateString) {
       return null;
     }
 
-    const month = parseInt(dateString.substring(0, 2), 10);
-    const year = parseInt(dateString.substring(2, 6), 10);
+    const [month, year] = dateString.split("/").map((p) => parseInt(p, 10));
+    if (!month || !year) {
+      return null;
+    }
 
     if (month < 1 || month > 12 || year < 1000) {
       return null;

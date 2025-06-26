@@ -3,16 +3,16 @@ import { NoteEntry } from "../../core/entities/NoteEntry";
 import { PasswordEntry } from "../../core/entities/PasswordEntry";
 import type { VaultEntry } from "../../core/entities/VaultEntry";
 import type { VaultEntryRepository } from "../../core/interfaces/repositories/VaultEntryRepository";
+import type { RecordProvider } from "../../core/interfaces/services/RecordReader.ts";
 import type { VaultEntryCreateProps } from "../../core/types/VaultEntryTypes";
 import { VaultEntryId } from "../../core/valueObjects/VaultEntryId";
 import { VaultFolderId } from "../../core/valueObjects/VoultFolderId";
-import type { CsvFile } from "../files/CsvFile.ts";
 
 export class CsvBCupVaultEntryRepository implements VaultEntryRepository {
-  constructor(private readonly file: CsvFile) {}
+  constructor(private readonly file: RecordProvider) {}
 
   async findById(id: VaultEntryId): Promise<VaultEntry | null> {
-    const content = await this.file.getFileContent();
+    const content = await this.file.getRecords();
 
     const row = content.find((row) => row.id === id.value);
     if (!row) {
@@ -22,7 +22,7 @@ export class CsvBCupVaultEntryRepository implements VaultEntryRepository {
   }
 
   async findByFolderId(folderId: VaultFolderId | null): Promise<VaultEntry[]> {
-    const rows = await this.file.getFileContent();
+    const rows = await this.file.getRecords();
 
     return rows
       .filter((row) => {
@@ -87,8 +87,8 @@ export class CsvBCupVaultEntryRepository implements VaultEntryRepository {
         cardCompany || "",
         cardNumber || "",
         cardHolderName || "",
-        CreditCardEntry.parseMMYYYYDate(expirationDate),
-        CreditCardEntry.parseMMYYYYDate(validFrom),
+        this.parseMMYYYYDate(expirationDate),
+        this.parseMMYYYYDate(validFrom),
         cvv
       );
     }
@@ -105,6 +105,21 @@ export class CsvBCupVaultEntryRepository implements VaultEntryRepository {
       password || "",
       actualUrl
     );
+  }
+
+  private parseMMYYYYDate(dateString: string | undefined): Date | null {
+    if (!dateString || dateString.length !== 6) {
+      return null;
+    }
+
+    const month = parseInt(dateString.substring(0, 2), 10);
+    const year = parseInt(dateString.substring(2, 6), 10);
+
+    if (month < 1 || month > 12 || year < 1000) {
+      return null;
+    }
+
+    return new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0));
   }
 
   private removeUnnecessaryFields(row: Record<string, string>): Record<string, string> {
