@@ -14,7 +14,7 @@ export class BitWardenRepositoryFactory implements RepositoryFactory {
     this.entryRepository = new BitWardenVaultEntryRepository(this.apiClient);
     this.folderRepository = new BitWardenVaultFolderRepository(
       this.apiClient,
-      this.entryRepository
+      this.entryRepository,
     );
   }
 

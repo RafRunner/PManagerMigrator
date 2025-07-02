@@ -3,7 +3,7 @@ export class BitWardenApiError extends Error {
     message: string,
     public readonly statusCode: number,
     public readonly endpoint: string,
-    cause?: any
+    cause?: any,
   ) {
     super(message, { cause });
     this.name = "BitWardenApiError";
@@ -13,9 +13,9 @@ export class BitWardenApiError extends Error {
 export class BitWardenAuthenticationError extends BitWardenApiError {
   constructor(statusCode: number, message?: string) {
     super(
-      `BitWarden authentication failed: ${message || "Unknown authentication error"}`,
+      `BitWarden authentication failed: ${message ?? "Unknown authentication error"}`,
       statusCode,
-      "/identity/connect/token"
+      "/identity/connect/token",
     );
     this.name = "BitWardenAuthenticationError";
   }
@@ -33,7 +33,7 @@ export class BitWardenSchemaValidationError extends Error {
     message: string,
     public readonly endpoint: string,
     public readonly zodError: any,
-    public readonly inputData?: any
+    public readonly inputData?: any,
   ) {
     super(`${message} - Input: ${JSON.stringify(inputData)}`, { cause: zodError });
     this.name = "BitWardenSchemaValidationError";

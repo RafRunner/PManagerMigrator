@@ -1,5 +1,5 @@
-import { VaultEntryId } from "../valueObjects/VaultEntryId";
-import { VaultFolderId } from "../valueObjects/VoultFolderId";
+import type { VaultEntryId } from "../valueObjects/VaultEntryId";
+import type { VaultFolderId } from "../valueObjects/VoultFolderId";
 import type { PasswordEntryCreateProps } from "../types/VaultEntryTypes";
 import { VaultEntry } from "./VaultEntry";
 
@@ -13,7 +13,7 @@ export class PasswordEntry extends VaultEntry {
     extraFields: Record<string, string>,
     readonly username: string,
     readonly password: string,
-    url?: string
+    url?: string,
   ) {
     super(id, name, folderId, extraFields);
 

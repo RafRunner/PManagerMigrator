@@ -1,5 +1,5 @@
-import { VaultEntryId } from "../valueObjects/VaultEntryId";
-import { VaultFolderId } from "../valueObjects/VoultFolderId";
+import type { VaultEntryId } from "../valueObjects/VaultEntryId";
+import type { VaultFolderId } from "../valueObjects/VoultFolderId";
 import type { VaultEntryCreateProps } from "../types/VaultEntryTypes";
 import { Entity } from "./Entity";
 
@@ -8,7 +8,7 @@ export abstract class VaultEntry extends Entity<VaultEntryId> {
     id: VaultEntryId,
     readonly name: string,
     readonly folderId: VaultFolderId | null,
-    readonly extraFields: Record<string, string>
+    readonly extraFields: Record<string, string>,
   ) {
     super(id);
   }

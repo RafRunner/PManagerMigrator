@@ -15,7 +15,7 @@ export class MigrateUseCase extends AbstractUseCase<MigrateUseCaseInput, void> {
     private readonly sourceFolderRepository: VaultFolderRepository,
     private readonly sourceEntryRepository: VaultEntryRepository,
     private readonly targetFolderRepository: VaultFolderRepository,
-    private readonly targetEntryRepository: VaultEntryRepository
+    private readonly targetEntryRepository: VaultEntryRepository,
   ) {
     super();
   }
@@ -59,7 +59,7 @@ export class MigrateUseCase extends AbstractUseCase<MigrateUseCaseInput, void> {
 
   private async clearTargetVault(
     targetFolders: VaultFolder[],
-    targetRootEntries: VaultEntry[]
+    targetRootEntries: VaultEntry[],
   ): Promise<void> {
     console.log("Clearing target folders and entries...");
 
@@ -83,7 +83,7 @@ export class MigrateUseCase extends AbstractUseCase<MigrateUseCaseInput, void> {
     parentFolderId: VaultFolderId | null,
     sourceVault: Vault,
     targetVault: Vault,
-    input: MigrateUseCaseInput
+    input: MigrateUseCaseInput,
   ): Promise<void> {
     console.log(`Migrating folder: ${sourceFolder.name}`);
 
@@ -100,12 +100,10 @@ export class MigrateUseCase extends AbstractUseCase<MigrateUseCaseInput, void> {
       }
     }
 
-    if (!newFolder) {
-      newFolder = await this.targetFolderRepository.create({
-        name: sourceFolder.name,
-        parentId: parentFolderId,
-      });
-    }
+    newFolder ??= await this.targetFolderRepository.create({
+      name: sourceFolder.name,
+      parentId: parentFolderId,
+    });
 
     await this.migrateEntries(sourceFolder.entries, newFolder, targetVault, input);
 
@@ -118,10 +116,10 @@ export class MigrateUseCase extends AbstractUseCase<MigrateUseCaseInput, void> {
     entries: VaultEntry[],
     targetFolder: VaultFolder | null,
     targetVault: Vault,
-    input: MigrateUseCaseInput
+    input: MigrateUseCaseInput,
   ): Promise<void> {
     for (const entry of entries) {
-      console.log(`Migrating entry: ${entry.name} to folder: ${targetFolder?.name || "<root>"}`);
+      console.log(`Migrating entry: ${entry.name} to folder: ${targetFolder?.name ?? "<root>"}`);
 
       if (!input.clearTarget) {
         const existingEntry = targetVault.findEntryByName(entry.name);

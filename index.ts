@@ -28,7 +28,7 @@ const migrateUseCase = new MigrateUseCase(
   bCupFolderRepository,
   bCupEntryRepository,
   bitWardenFolderRepository,
-  bitWardenEntryRepository
+  bitWardenEntryRepository,
 );
 
 try {

@@ -1,5 +1,5 @@
 import { request } from "undici";
-import { z } from "zod";
+import type { z } from "zod";
 import {
   BitWardenApiError,
   BitWardenAuthenticationError,
@@ -104,12 +104,12 @@ export class BitWardenApiClient {
   private async makeApiRequest<T>(
     endpoint: string,
     options: RequestOptions = {},
-    schema?: z.ZodType<T>
+    schema?: z.ZodType<T>,
   ): Promise<T> {
     await this.ensureAuthenticated();
 
     const url = `${this.config.apiBaseUrl}/${endpoint}`;
-    const method = options.method || "GET";
+    const method = options.method ?? "GET";
 
     await this.rateLimiter.waitForToken();
 
@@ -141,7 +141,7 @@ export class BitWardenApiClient {
       throw new BitWardenApiError(
         responseText || `HTTP ${response.statusCode} error`,
         response.statusCode,
-        methodAndEndpoint
+        methodAndEndpoint,
       );
     }
 
@@ -149,7 +149,7 @@ export class BitWardenApiClient {
       throw new BitWardenApiError(
         responseText || `HTTP ${response.statusCode} error`,
         response.statusCode,
-        methodAndEndpoint
+        methodAndEndpoint,
       );
     }
 
@@ -165,20 +165,20 @@ export class BitWardenApiClient {
           "Invalid API response format",
           methodAndEndpoint,
           error,
-          responseData
+          responseData,
         );
       }
     }
 
     // For requests without validation (like DELETE), return parsed JSON or empty object
-    return (responseData || {}) as T;
+    return (responseData ?? {}) as T;
   }
 
   async getFolders(): Promise<BitWardenFolder[]> {
     const response = await this.makeApiRequest(
       "list/object/folders",
       {},
-      BitWardenListResponseSchema(BitWardenFolderSchema)
+      BitWardenListResponseSchema(BitWardenFolderSchema),
     );
     return response.data;
   }
@@ -195,11 +195,11 @@ export class BitWardenApiClient {
           search: name,
         },
       },
-      BitWardenListResponseSchema(BitWardenFolderSchema)
+      BitWardenListResponseSchema(BitWardenFolderSchema),
     );
 
     const folder = response.data[0];
-    return folder || null;
+    return folder ?? null;
   }
 
   async createFolder(name: string): Promise<BitWardenFolder> {
@@ -210,7 +210,7 @@ export class BitWardenApiClient {
           method: "POST",
           body: JSON.stringify({ name }),
         },
-        BitWardenFolderSchema
+        BitWardenFolderSchema,
       );
     } catch (error) {
       // Temporary workaround for BitWarden API bug
@@ -248,7 +248,7 @@ export class BitWardenApiClient {
     const response = await this.makeApiRequest(
       "list/object/item",
       {},
-      BitWardenListResponseSchema(BitWardenItemSchema)
+      BitWardenListResponseSchema(BitWardenItemSchema),
     );
     return response.data;
   }
@@ -265,7 +265,7 @@ export class BitWardenApiClient {
           folderid: String(folderId),
         },
       },
-      BitWardenListResponseSchema(BitWardenItemSchema)
+      BitWardenListResponseSchema(BitWardenItemSchema),
     );
     return response.data;
   }
@@ -277,7 +277,7 @@ export class BitWardenApiClient {
         method: "POST",
         body: JSON.stringify(item),
       },
-      BitWardenItemSchema
+      BitWardenItemSchema,
     );
   }
 

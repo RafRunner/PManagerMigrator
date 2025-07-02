@@ -22,7 +22,10 @@ export class CsvFile implements RecordProvider {
         throw new Error("CSV row is an array, expected an object with headers.");
       } else {
         return Object.fromEntries(
-          Object.entries(row).map(([key, value]) => [key, String(value || "")])
+          Object.entries(row).map(([key, value]) => [
+            key,
+            value && typeof value === "object" ? JSON.stringify(value) : String(value),
+          ]),
         );
       }
     });

@@ -3,16 +3,11 @@ import { NoteEntry } from "../../core/entities/NoteEntry";
 import { PasswordEntry } from "../../core/entities/PasswordEntry";
 import type { VaultEntry } from "../../core/entities/VaultEntry";
 import type { VaultEntryRepository } from "../../core/interfaces/repositories/VaultEntryRepository";
-import type {
-  VaultEntryCreateProps,
-  PasswordEntryCreateProps,
-  NoteEntryCreateProps,
-  CreditCardEntryCreateProps,
-} from "../../core/types/VaultEntryTypes";
+import type { VaultEntryCreateProps } from "../../core/types/VaultEntryTypes";
 import { VaultEntryId } from "../../core/valueObjects/VaultEntryId";
 import { VaultFolderId } from "../../core/valueObjects/VoultFolderId";
 import {
-  BitWardenApiClient,
+  type BitWardenApiClient,
   BITWARDEN_ITEM_TYPE,
   type BitWardenItem,
   type BitWardenField,
@@ -37,7 +32,7 @@ export class BitWardenVaultEntryRepository implements VaultEntryRepository {
   }
 
   async findByFolderId(folderId: VaultFolderId | null): Promise<VaultEntry[]> {
-    const bitwardenItems = await this.apiClient.getItemsByFolder(folderId?.value || null);
+    const bitwardenItems = await this.apiClient.getItemsByFolder(folderId?.value ?? null);
     return bitwardenItems.map((item) => this.mapBitWardenItemToVaultEntry(item));
   }
 
@@ -64,13 +59,13 @@ export class BitWardenVaultEntryRepository implements VaultEntryRepository {
           name,
           folderId,
           extraFields,
-          item.login?.username || "",
-          item.login?.password || "",
-          item.login?.uris?.[0]?.uri
+          item.login?.username ?? "",
+          item.login?.password ?? "",
+          item.login?.uris?.[0]?.uri,
         );
 
       case BITWARDEN_ITEM_TYPE.SECURE_NOTE:
-        return new NoteEntry(id, name, folderId, extraFields, item.notes || "");
+        return new NoteEntry(id, name, folderId, extraFields, item.notes ?? "");
 
       case BITWARDEN_ITEM_TYPE.CARD: {
         // BitWarden doesn't have validFrom for cards, so we look for it in extra fields
@@ -86,12 +81,12 @@ export class BitWardenVaultEntryRepository implements VaultEntryRepository {
           name,
           folderId,
           extraFields,
-          item.card?.brand || "",
-          item.card?.number || "",
-          item.card?.cardholderName || "",
+          item.card?.brand ?? "",
+          item.card?.number ?? "",
+          item.card?.cardholderName ?? "",
           this.parseCardExpirationDate(item.card?.expMonth, item.card?.expYear),
           CreditCardEntry.parseMMYYYYDate(validFrom),
-          item.card?.code || ""
+          item.card?.code ?? "",
         );
       }
 
@@ -104,15 +99,15 @@ export class BitWardenVaultEntryRepository implements VaultEntryRepository {
           folderId,
           {
             ...extraFields,
-            firstName: item.identity?.firstName || "",
-            lastName: item.identity?.lastName || "",
-            email: item.identity?.email || "",
-            phone: item.identity?.phone || "",
-            company: item.identity?.company || "",
+            firstName: item.identity?.firstName ?? "",
+            lastName: item.identity?.lastName ?? "",
+            email: item.identity?.email ?? "",
+            phone: item.identity?.phone ?? "",
+            company: item.identity?.company ?? "",
           },
-          item.identity?.username || "",
+          item.identity?.username ?? "",
           "", // Identity items don't have passwords in BitWarden
-          ""
+          "",
         );
 
       default:
@@ -133,13 +128,13 @@ export class BitWardenVaultEntryRepository implements VaultEntryRepository {
         }
         return acc;
       },
-      {} as Record<string, string>
+      {} as Record<string, string>,
     );
   }
 
   private parseCardExpirationDate(
     expMonth: string | null | undefined,
-    expYear: string | null | undefined
+    expYear: string | null | undefined,
   ): Date | null {
     if (!expMonth || !expYear) {
       return null;
@@ -156,11 +151,11 @@ export class BitWardenVaultEntryRepository implements VaultEntryRepository {
   }
 
   private mapVaultEntryCreatePropsToBitWardenItem(
-    props: VaultEntryCreateProps
+    props: VaultEntryCreateProps,
   ): Partial<BitWardenItem> {
     const baseItem: Partial<BitWardenItem> = {
       name: props.name,
-      folderId: props.folderId?.value || null,
+      folderId: props.folderId?.value ?? null,
       fields:
         props.extraFields &&
         Object.entries(props.extraFields).map(([name, value]) => ({
@@ -172,7 +167,7 @@ export class BitWardenVaultEntryRepository implements VaultEntryRepository {
 
     if ("password" in props && "username" in props) {
       // PasswordEntry
-      const passwordProps = props as PasswordEntryCreateProps;
+      const passwordProps = props;
       return {
         ...baseItem,
         type: BITWARDEN_ITEM_TYPE.LOGIN,
@@ -193,11 +188,11 @@ export class BitWardenVaultEntryRepository implements VaultEntryRepository {
       };
     } else if ("content" in props) {
       // NoteEntry
-      const noteProps = props as NoteEntryCreateProps;
+      const noteProps = props;
       return {
         ...baseItem,
         type: BITWARDEN_ITEM_TYPE.SECURE_NOTE,
-        notes: noteProps.content || "",
+        notes: noteProps.content ?? "",
         secureNote: {
           type: 0, // Generic note
         },
@@ -209,9 +204,9 @@ export class BitWardenVaultEntryRepository implements VaultEntryRepository {
       "cvv" in props
     ) {
       // CreditCardEntry
-      const cardProps = props as CreditCardEntryCreateProps;
+      const cardProps = props;
       if (cardProps.validFrom) {
-        baseItem.fields = baseItem.fields || [];
+        baseItem.fields = baseItem.fields ?? [];
 
         baseItem.fields.push({
           name: "Valid From",

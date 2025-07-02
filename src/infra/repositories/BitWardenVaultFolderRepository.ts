@@ -3,13 +3,13 @@ import type { VaultEntryRepository } from "../../core/interfaces/repositories/Va
 import type { VaultFolderRepository } from "../../core/interfaces/repositories/VaultFolderRepository";
 import type { VaultFolderCreateProps } from "../../core/types/VaultFolderTypes";
 import { VaultFolderId } from "../../core/valueObjects/VoultFolderId";
-import { BitWardenApiClient, type BitWardenFolder } from "../api/BitWardenApiClient";
+import type { BitWardenApiClient, BitWardenFolder } from "../api/BitWardenApiClient";
 import { BitWardenResourceNotFoundError } from "../api/BitWardenErrors";
 
 export class BitWardenVaultFolderRepository implements VaultFolderRepository {
   constructor(
     private readonly apiClient: BitWardenApiClient,
-    private readonly entryRepository: VaultEntryRepository
+    private readonly entryRepository: VaultEntryRepository,
   ) {}
 
   async findAll(): Promise<VaultFolder[]> {
@@ -20,7 +20,7 @@ export class BitWardenVaultFolderRepository implements VaultFolderRepository {
       (folder) =>
         folder.name.toLowerCase() !== "trash" &&
         folder.name.toLowerCase() !== "deleted" &&
-        !!folder.id
+        !!folder.id,
     );
 
     const idByName = new Map<string, VaultFolderId>();
@@ -28,13 +28,13 @@ export class BitWardenVaultFolderRepository implements VaultFolderRepository {
     const folders = await Promise.all(
       activeFolders.map(async (bitwardenFolder) => {
         const entries = await this.entryRepository.findByFolderId(
-          new VaultFolderId(bitwardenFolder.id!)
+          new VaultFolderId(bitwardenFolder.id!),
         );
 
         idByName.set(bitwardenFolder.name, new VaultFolderId(bitwardenFolder.id!));
 
         return { bitwardenFolder, entries };
-      })
+      }),
     );
 
     return folders.map(({ bitwardenFolder, entries }) => {
@@ -68,7 +68,7 @@ export class BitWardenVaultFolderRepository implements VaultFolderRepository {
 
       if (parentName) {
         const parent = await this.apiClient.getFolderByName(parentName);
-        if (parent && parent.id) {
+        if (parent?.id) {
           parentId = new VaultFolderId(parent.id);
         }
       }
@@ -107,7 +107,7 @@ export class BitWardenVaultFolderRepository implements VaultFolderRepository {
 
   private mapBitWardenFolderToVaultFolder(
     bitwardenFolder: BitWardenFolder,
-    parentId: VaultFolderId | null
+    parentId: VaultFolderId | null,
   ): VaultFolder {
     const folderId = bitwardenFolder.id;
     if (!folderId) {

@@ -1,4 +1,4 @@
-import { VaultFolderId } from "../valueObjects/VoultFolderId";
+import type { VaultFolderId } from "../valueObjects/VoultFolderId";
 
 export interface VaultFolderCreateProps {
   name: string;

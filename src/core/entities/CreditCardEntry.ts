@@ -14,7 +14,7 @@ export class CreditCardEntry extends VaultEntry {
     public readonly cardHolderName: string,
     public readonly expirationDate: Date | null,
     public readonly validFrom: Date | null,
-    public readonly cvv: string
+    public readonly cvv: string,
   ) {
     super(id, name, folderId, extraFields);
   }

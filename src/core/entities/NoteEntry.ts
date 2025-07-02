@@ -1,5 +1,5 @@
-import { VaultEntryId } from "../valueObjects/VaultEntryId";
-import { VaultFolderId } from "../valueObjects/VoultFolderId";
+import type { VaultEntryId } from "../valueObjects/VaultEntryId";
+import type { VaultFolderId } from "../valueObjects/VoultFolderId";
 import type { NoteEntryCreateProps } from "../types/VaultEntryTypes";
 import { VaultEntry } from "./VaultEntry";
 
@@ -9,7 +9,7 @@ export class NoteEntry extends VaultEntry {
     name: string,
     folderId: VaultFolderId | null,
     extraFields: Record<string, string>,
-    readonly content: string
+    readonly content: string,
   ) {
     super(id, name, folderId, extraFields);
   }

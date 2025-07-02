@@ -7,7 +7,7 @@ export class BitWardenConfigBuilder {
   private config: Partial<BitWardenConfig> = {};
 
   static fromEnvironment(): BitWardenConfig {
-    const apiBaseUrl = process.env.BITWARDEN_API_BASE_URL || "http://localhost:8087";
+    const apiBaseUrl = process.env.BITWARDEN_API_BASE_URL ?? "http://localhost:8087";
     const password = process.env.BITWARDEN_PASSWORD;
 
     if (!password) {

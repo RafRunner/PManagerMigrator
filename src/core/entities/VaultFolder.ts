@@ -1,13 +1,13 @@
-import { VaultFolderId } from "../valueObjects/VoultFolderId";
+import type { VaultFolderId } from "../valueObjects/VoultFolderId";
 import { Entity } from "./Entity";
-import { VaultEntry } from "./VaultEntry";
+import type { VaultEntry } from "./VaultEntry";
 
 export class VaultFolder extends Entity<VaultFolderId> {
   constructor(
     id: VaultFolderId,
     readonly name: string,
     readonly parentId: VaultFolderId | null,
-    readonly entries: VaultEntry[]
+    readonly entries: VaultEntry[],
   ) {
     super(id);
   }

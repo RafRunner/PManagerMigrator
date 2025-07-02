@@ -8,14 +8,14 @@ import { VaultFolderId } from "../../core/valueObjects/VoultFolderId";
 export class CsvBCupVaultFolderRepository implements VaultFolderRepository {
   constructor(
     private readonly file: RecordProvider,
-    private readonly entryRepository: VaultEntryRepository
+    private readonly entryRepository: VaultEntryRepository,
   ) {}
 
   async findAll(): Promise<VaultFolder[]> {
     const content = await this.file.getRecords();
 
     const folders = content.filter(
-      (row) => row["!type"] === "group" && row["!group_name"] !== "Trash"
+      (row) => row["!type"] === "group" && row["!group_name"] !== "Trash",
     );
 
     return (
@@ -26,7 +26,7 @@ export class CsvBCupVaultFolderRepository implements VaultFolderRepository {
           folder.addEntrys(await this.entryRepository.findByFolderId(folder.id));
 
           return folder;
-        })
+        }),
       )
     ).filter((folder) => folder.entries.length > 0);
   }

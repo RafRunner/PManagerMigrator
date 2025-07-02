@@ -90,7 +90,7 @@ export const BitWardenItemSchema = z.object({
 });
 
 export const BitWardenListResponseSchema = <T extends z.ZodType>(
-  itemSchema: T
+  itemSchema: T,
 ): z.ZodObject<{
   object: z.ZodLiteral<"list">;
   data: z.ZodArray<T>;

@@ -66,7 +66,7 @@ export class CsvBCupVaultEntryRepository implements VaultEntryRepository {
         nonEmptyTitle,
         groupId ? new VaultFolderId(groupId) : null,
         this.removeUnnecessaryFields(extraFields),
-        note
+        note,
       );
     }
 
@@ -86,26 +86,26 @@ export class CsvBCupVaultEntryRepository implements VaultEntryRepository {
         nonEmptyTitle,
         groupId ? new VaultFolderId(groupId) : null,
         this.removeUnnecessaryFields(extraFields),
-        cardCompany || "",
-        cardNumber || "",
-        cardHolderName || "",
+        cardCompany ?? "",
+        cardNumber ?? "",
+        cardHolderName ?? "",
         this.parseMMYYYYDate(expirationDate),
         this.parseMMYYYYDate(validFrom),
-        cvv
+        cvv,
       );
     }
 
     const { username, password, url, ...extraFields } = rest;
-    const actualUrl = url || extraFields.url || extraFields.URL;
+    const actualUrl = url ?? extraFields.url ?? extraFields.URL;
 
     return new PasswordEntry(
       new VaultEntryId(rowId),
       nonEmptyTitle,
       groupId ? new VaultFolderId(groupId) : null,
       this.removeUnnecessaryFields(extraFields),
-      username || "",
-      password || "",
-      actualUrl
+      username ?? "",
+      password ?? "",
+      actualUrl,
     );
   }
 
@@ -128,7 +128,9 @@ export class CsvBCupVaultEntryRepository implements VaultEntryRepository {
     const unnecessaryFields = ["!type", "!group_id", "!group_name", "!group_parent", "url", "URL"];
 
     return Object.fromEntries(
-      Object.entries(row).filter(([key, value]) => !unnecessaryFields.includes(key) && value !== "")
+      Object.entries(row).filter(
+        ([key, value]) => !unnecessaryFields.includes(key) && value !== "",
+      ),
     );
   }
 }
