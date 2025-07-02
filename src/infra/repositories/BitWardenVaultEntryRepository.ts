@@ -72,7 +72,7 @@ export class BitWardenVaultEntryRepository implements VaultEntryRepository {
       case BITWARDEN_ITEM_TYPE.SECURE_NOTE:
         return new NoteEntry(id, name, folderId, extraFields, item.notes || "");
 
-      case BITWARDEN_ITEM_TYPE.CARD:
+      case BITWARDEN_ITEM_TYPE.CARD: {
         // BitWarden doesn't have validFrom for cards, so we look for it in extra fields
         const validFrom =
           extraFields.validFrom ??
@@ -93,6 +93,7 @@ export class BitWardenVaultEntryRepository implements VaultEntryRepository {
           CreditCardEntry.parseMMYYYYDate(validFrom),
           item.card?.code || ""
         );
+      }
 
       case BITWARDEN_ITEM_TYPE.IDENTITY:
         // TODO create a IdentityEntry class if needed

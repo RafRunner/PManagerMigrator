@@ -2,7 +2,6 @@ import { CsvFile } from "./src/infra/files/CsvFile.ts";
 import { BitWardenConfigBuilder } from "./src/infra/config/BitWardenConfig.ts";
 import { BitWardenRepositoryFactory } from "./src/infra/factories/BitWardenRepositoryFactory.ts";
 import { MigrateUseCase } from "./src/core/usecases/MigrateUseCase.ts";
-import { RateLimiter } from "./src/infra/api/RateLimiter.ts";
 import { CsvBCupRepositoryFactory } from "./src/infra/factories/CsvBCupRepositoryFactory.ts";
 
 const [filePath] = Bun.argv.slice(2);

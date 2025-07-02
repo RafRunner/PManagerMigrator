@@ -1,6 +1,6 @@
 import { VaultFolderId } from "../valueObjects/VoultFolderId";
 
-export type VaultFolderCreateProps = {
+export interface VaultFolderCreateProps {
   name: string;
   parentId?: VaultFolderId | null;
-};
+}

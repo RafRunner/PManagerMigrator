@@ -4,7 +4,6 @@ import type { VaultFolderRepository } from "../../core/interfaces/repositories/V
 import type { RecordProvider } from "../../core/interfaces/services/RecordReader";
 import type { VaultFolderCreateProps } from "../../core/types/VaultFolderTypes";
 import { VaultFolderId } from "../../core/valueObjects/VoultFolderId";
-import type { CsvFile } from "../files/CsvFile";
 
 export class CsvBCupVaultFolderRepository implements VaultFolderRepository {
   constructor(
@@ -46,10 +45,10 @@ export class CsvBCupVaultFolderRepository implements VaultFolderRepository {
     return folder;
   }
 
-  create(entry: VaultFolderCreateProps): Promise<VaultFolder> {
+  create(_entry: VaultFolderCreateProps): Promise<VaultFolder> {
     throw new Error("Method not implemented.");
   }
-  delete(id: VaultFolderId): Promise<void> {
+  delete(_id: VaultFolderId): Promise<void> {
     throw new Error("Method not implemented.");
   }
 

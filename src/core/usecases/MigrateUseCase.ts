@@ -33,7 +33,7 @@ export class MigrateUseCase extends AbstractUseCase<MigrateUseCaseInput, void> {
       this.targetEntryRepository.findByFolderId(null),
     ]);
 
-    let targetVault = new Vault();
+    const targetVault = new Vault();
 
     if (input.clearTarget) {
       await this.clearTargetVault(targetFolders, targetRootEntries);
@@ -57,7 +57,10 @@ export class MigrateUseCase extends AbstractUseCase<MigrateUseCaseInput, void> {
     console.log("Migration completed successfully.");
   }
 
-  private async clearTargetVault(targetFolders: VaultFolder[], targetRootEntries: VaultEntry[]) {
+  private async clearTargetVault(
+    targetFolders: VaultFolder[],
+    targetRootEntries: VaultEntry[]
+  ): Promise<void> {
     console.log("Clearing target folders and entries...");
 
     for (const folder of targetFolders) {
@@ -116,7 +119,7 @@ export class MigrateUseCase extends AbstractUseCase<MigrateUseCaseInput, void> {
     targetFolder: VaultFolder | null,
     targetVault: Vault,
     input: MigrateUseCaseInput
-  ) {
+  ): Promise<void> {
     for (const entry of entries) {
       console.log(`Migrating entry: ${entry.name} to folder: ${targetFolder?.name || "<root>"}`);
 

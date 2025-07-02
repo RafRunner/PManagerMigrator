@@ -1,10 +1,10 @@
 import type { VaultFolderId } from "../valueObjects/VoultFolderId";
 
-export type AbstractVaultEntryCreateProps = {
+export interface AbstractVaultEntryCreateProps {
   name: string;
   folderId?: VaultFolderId | null;
   extraFields?: Record<string, string>;
-};
+}
 
 export type PasswordEntryCreateProps = AbstractVaultEntryCreateProps & {
   username: string;

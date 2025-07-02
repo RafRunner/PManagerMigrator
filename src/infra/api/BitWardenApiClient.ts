@@ -38,12 +38,12 @@ export const BITWARDEN_FIELD_TYPE = {
 
 export type { BitWardenField, BitWardenItem, BitWardenFolder };
 
-type RequestOptions = {
+interface RequestOptions {
   method?: string;
   headers?: Record<string, string>;
   body?: string;
   query?: Record<string, string>;
-};
+}
 
 interface DefaultBitwardenResponse {
   success: boolean;
@@ -51,7 +51,7 @@ interface DefaultBitwardenResponse {
   message?: any;
 }
 
-function isDefaultBitwardenResponse(obj: unknown): obj is DefaultBitwardenResponse {
+const isDefaultBitwardenResponse = (obj: unknown): obj is DefaultBitwardenResponse => {
   return (
     typeof obj === "object" &&
     obj !== null &&
@@ -59,7 +59,7 @@ function isDefaultBitwardenResponse(obj: unknown): obj is DefaultBitwardenRespon
     typeof (obj as DefaultBitwardenResponse).success === "boolean" &&
     ("data" in obj || "message" in obj)
   );
-}
+};
 
 export class BitWardenApiClient {
   private unlocked = false;

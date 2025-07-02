@@ -46,14 +46,16 @@ export class CsvBCupVaultEntryRepository implements VaultEntryRepository {
   }
 
   private mapRowToEntry(row: Record<string, string>): VaultEntry {
-    let { "!group_id": groupId, id: rowId, title, ...rest } = row;
+    const { "!group_id": groupId, id: rowId, title, ...rest } = row;
 
     if (!rowId) {
       throw new Error("Row does not have an id field.");
     }
-    if (!title) {
+
+    let nonEmptyTitle = title?.trim();
+    if (!nonEmptyTitle) {
       console.warn("Row does not have a title field.");
-      title = "Untitled Entry " + rowId;
+      nonEmptyTitle = `Untitled Entry ${rowId}`;
     }
 
     if (rest.note) {
@@ -61,7 +63,7 @@ export class CsvBCupVaultEntryRepository implements VaultEntryRepository {
 
       return new NoteEntry(
         new VaultEntryId(rowId),
-        title.trim(),
+        nonEmptyTitle,
         groupId ? new VaultFolderId(groupId) : null,
         this.removeUnnecessaryFields(extraFields),
         note
@@ -81,7 +83,7 @@ export class CsvBCupVaultEntryRepository implements VaultEntryRepository {
 
       return new CreditCardEntry(
         new VaultEntryId(rowId),
-        title.trim(),
+        nonEmptyTitle,
         groupId ? new VaultFolderId(groupId) : null,
         this.removeUnnecessaryFields(extraFields),
         cardCompany || "",
@@ -98,7 +100,7 @@ export class CsvBCupVaultEntryRepository implements VaultEntryRepository {
 
     return new PasswordEntry(
       new VaultEntryId(rowId),
-      title.trim(),
+      nonEmptyTitle,
       groupId ? new VaultFolderId(groupId) : null,
       this.removeUnnecessaryFields(extraFields),
       username || "",
