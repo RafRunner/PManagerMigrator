@@ -167,19 +167,18 @@ export class BitWardenVaultEntryRepository implements VaultEntryRepository {
 
     if ("password" in props && "username" in props) {
       // PasswordEntry
-      const passwordProps = props;
       return {
         ...baseItem,
         type: BITWARDEN_ITEM_TYPE.LOGIN,
         login: {
-          username: passwordProps.username,
-          password: passwordProps.password,
+          username: props.username,
+          password: props.password,
           totp: null,
           passwordRevisionDate: null,
-          uris: passwordProps.url
+          uris: props.url
             ? [
                 {
-                  uri: passwordProps.url,
+                  uri: props.url,
                   match: 0,
                 },
               ]
@@ -188,11 +187,10 @@ export class BitWardenVaultEntryRepository implements VaultEntryRepository {
       };
     } else if ("content" in props) {
       // NoteEntry
-      const noteProps = props;
       return {
         ...baseItem,
         type: BITWARDEN_ITEM_TYPE.SECURE_NOTE,
-        notes: noteProps.content ?? "",
+        notes: props.content ?? "",
         secureNote: {
           type: 0, // Generic note
         },
@@ -204,13 +202,12 @@ export class BitWardenVaultEntryRepository implements VaultEntryRepository {
       "cvv" in props
     ) {
       // CreditCardEntry
-      const cardProps = props;
-      if (cardProps.validFrom) {
+      if (props.validFrom) {
         baseItem.fields = baseItem.fields ?? [];
 
         baseItem.fields.push({
           name: "Valid From",
-          value: CreditCardEntry.formatDateToMMYYYY(cardProps.validFrom)!,
+          value: CreditCardEntry.formatDateToMMYYYY(props.validFrom)!,
           type: BITWARDEN_FIELD_TYPE.TEXT,
         });
       }
@@ -219,16 +216,14 @@ export class BitWardenVaultEntryRepository implements VaultEntryRepository {
         ...baseItem,
         type: BITWARDEN_ITEM_TYPE.CARD,
         card: {
-          cardholderName: cardProps.cardHolderName,
-          brand: cardProps.cardCompany,
-          number: cardProps.cardNumber,
-          expMonth: cardProps.expirationDate
-            ? (cardProps.expirationDate.getUTCMonth() + 1).toString().padStart(2, "0")
+          cardholderName: props.cardHolderName,
+          brand: props.cardCompany,
+          number: props.cardNumber,
+          expMonth: props.expirationDate
+            ? (props.expirationDate.getUTCMonth() + 1).toString().padStart(2, "0")
             : null,
-          expYear: cardProps.expirationDate
-            ? cardProps.expirationDate.getUTCFullYear().toString()
-            : null,
-          code: cardProps.cvv,
+          expYear: props.expirationDate ? props.expirationDate.getUTCFullYear().toString() : null,
+          code: props.cvv,
         },
       };
     }
